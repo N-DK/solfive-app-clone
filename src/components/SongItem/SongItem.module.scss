@@ -1,0 +1,30 @@
+.wrapper {
+    border-bottom: rgb(23 23 23) solid 1px;
+
+    .details {
+        opacity: 0;
+        transition: ease-in-out 0.2s;
+    }
+
+    .btn_play {
+        background: rgba(0, 0, 0, 0.6);
+    }
+
+    &:hover {
+        .details {
+            opacity: 1;
+        }
+    }
+
+    .btn {
+        &:hover {
+            background-color: #ffffff1a;
+        }
+    }
+
+    a {
+        &:hover {
+            text-decoration: underline;
+        }
+    }
+}

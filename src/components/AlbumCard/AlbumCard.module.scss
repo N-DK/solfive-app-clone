@@ -1,0 +1,15 @@
+.name {
+    transition: all ease-in-out 0.3s;
+    font-weight: 600;
+    &:hover {
+        text-decoration: underline;
+    }
+}
+
+.artists {
+    a {
+        &:hover {
+            text-decoration: underline;
+        }
+    }
+}

@@ -1,0 +1,16 @@
+.wrapper {
+    background-color: #212121;
+    height: 72px;
+
+    button {
+        transition: .3s ease-in-out;
+        &:hover {
+            background-color: #ffffff1a;
+        }
+    }
+}
+
+.isPlayerOpened {
+    transition: all .3s ease-in-out;
+    transform: rotate(180deg);
+}

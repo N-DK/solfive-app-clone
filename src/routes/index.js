@@ -1,8 +1,16 @@
-import { Home } from "~/pages/Home"
-
+import { Artist } from '~/pages/Artist';
+import { Home } from '~/pages/Home';
+import { Library } from '~/pages/Library';
+import { Player } from '~/pages/Player';
+import { Playlist } from '~/pages/Playlist';
 
 export const publicRoutes = [
-    {path: '/', component: Home}
-]
+    { path: '/', component: Home },
+    { path: '/explore', component: Home },
+    { path: '/playlist', component: Playlist },
+    { path: '/library', component: Library },
+    { path: '/artist', component: Artist },
+    { path: '/player', component: Player },
+];
 
-export const privateRoutes = []
+export const privateRoutes = [];

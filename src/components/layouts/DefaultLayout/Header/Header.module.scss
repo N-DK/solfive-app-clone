@@ -1,0 +1,19 @@
+.search {
+    width: 490px;
+    border-color: #ffffff25;
+}
+
+.btn_clear {
+    transition: all ease-in-out .3s;
+    &:hover {
+        background-color: #ffffff1a;
+    }
+}
+
+.btn-login {
+    border-color: #262626;
+    transition: all ease-in 0.2s;
+    &:hover {
+        background: #ffffff1a;
+    }
+}

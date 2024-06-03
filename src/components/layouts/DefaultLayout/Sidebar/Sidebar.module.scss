@@ -1,0 +1,27 @@
+.wrapper {
+    border-right: 1px solid #262626;
+}
+
+.border-b {
+    border-bottom: #262626 solid 1px;
+}
+
+.btn-login {
+    border-color: #262626;
+    transition: all ease-in 0.2s;
+    &:hover {
+        background: #ffffff1a;
+    }
+}
+
+.tab {
+    &:hover {
+        a {
+            background-color: #ffffff30;
+        }
+    }
+}
+
+.tab.active > a{
+    background-color: #ffffff17;
+}

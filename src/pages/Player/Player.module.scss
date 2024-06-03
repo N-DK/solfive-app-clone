@@ -1,0 +1,63 @@
+.wrapper {
+    left: 240px;
+    animation: in 0.4s ease-in-out;
+    .list-results {
+        max-height: 750px;
+        overflow-y: scroll;
+    }
+    .img_small {
+        animation: inImgSmall 0.6s ease-in-out forwards;
+    }
+
+    .line {
+        background-color: #67b9f9;
+        transition: all ease-in-out 0.3s;
+        width: 100px;
+        position: absolute;
+        height: 2px;
+        border-radius: 16px;
+        bottom: -2px;
+        transform: translateX(40px);
+    }
+
+    .playlist_name {
+        border: 1px solid #171717;
+    }
+}
+
+@keyframes inImgSmall {
+    0% {
+        opacity: 0;
+        transform: scale(0);
+        transform-origin: center center;
+    }
+
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+@keyframes in {
+    0% {
+        transform: translateY(110%);
+        opacity: 0;
+    }
+
+    100% {
+        transform: translateY(0%);
+        opacity: 1;
+    }
+}
+
+@keyframes out {
+    0% {
+        transform: translateY(0%);
+        opacity: 0;
+    }
+
+    100% {
+        transform: translateY(110%);
+        opacity: 1;
+    }
+}
