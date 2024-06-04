@@ -16,27 +16,93 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
+import { useStore } from '~/store/hooks';
+import { pauseSong, playSong } from '~/store/actions';
+import { getPlaylistById, getSoundSongById } from '~/service';
+import { convertSecondsToMMSS, formatTime } from '~/utils';
 
 const cx = classNames.bind(styles);
+
+const NEXT = 1;
+const PREV = -1;
 
 function Footer() {
     const navigate = useNavigate();
     const location = useLocation();
+    const [state, dispatch] = useStore();
+    const { currentSong, playListId, isPlaying, currentAudio, playlist } =
+        state;
+    const [navigationHistory, setNavigationHistory] = useState([]);
+    const [volume, setVolume] = useState(1);
+    const [isRepeat, setIsRepeat] = useState(false);
+    const [isShuffle, setIsShuffle] = useState(false);
+    const [timeSong, setTimeSong] = useState();
     const [isPlayerOpened, setIsPlayerOpened] = useState(
         location.pathname.includes('/player'),
     );
-    const [navigationHistory, setNavigationHistory] = useState([]);
 
-    useEffect(() => {
-        setNavigationHistory((prevHistory) => [
-            ...prevHistory,
-            location.pathname,
-        ]);
-    }, [location]);
+    const getIndexSongInPlaylist = (currentSong) => {
+        return playlist?.findIndex((song) => {
+            console.log(
+                'song.encodeId',
+                song.encodeId,
+                'currentSong.encodeId',
+                currentSong.encodeId,
+                'RESULT: ',
+                song.encodeId === currentSong.encodeId,
+            );
+            return song.encodeId === currentSong.encodeId;
+        });
+    };
+
+    const handleNavigatorSong = (type) => {
+        const handle = async () => {
+            const index = getIndexSongInPlaylist(currentSong);
+            if (index + type >= 0 && index + type < playlist.length) {
+                const song = playlist[index + type];
+                if (window.location.pathname.includes('/player')) {
+                    navigate(
+                        `/player?id=${song?.encodeId}&listId=${playListId}`,
+                    );
+                }
+                const res = await getSoundSongById(song?.encodeId);
+                const URL = res?.data['128'];
+                handlePause();
+                var audio = new Audio(URL);
+                dispatch(
+                    playSong({
+                        audio,
+                        song,
+                        playListId,
+                        playlist,
+                    }),
+                );
+                audio.play();
+            }
+        };
+        handle();
+    };
+
+    const handlePlay = (e) => {
+        e.stopPropagation();
+        dispatch(
+            playSong({
+                audio: currentAudio,
+                song: currentSong,
+                playListId: playListId,
+            }),
+        );
+        currentAudio.play();
+    };
+
+    const handlePause = () => {
+        dispatch(pauseSong(currentAudio));
+        currentAudio.pause();
+    };
 
     const handleOpenPlayer = () => {
         if (!isPlayerOpened) {
-            navigate(`/player?id=Z7IBO8FC&listId=6I8UAFZA`);
+            navigate(`/player?id=${currentSong.encodeId}&listId=${playListId}`);
             setIsPlayerOpened(true);
         } else {
             if (navigationHistory.length > 2) {
@@ -48,6 +114,58 @@ function Footer() {
         }
     };
 
+    useEffect(() => {
+        if (currentSong) {
+            currentAudio.volume = volume;
+            currentAudio.addEventListener('timeupdate', () => {
+                setTimeSong(currentAudio.currentTime);
+            });
+        }
+    }, [currentSong]);
+
+    useEffect(() => {
+        setNavigationHistory((prevHistory) => [
+            ...prevHistory,
+            location.pathname,
+        ]);
+    }, [location]);
+
+    useEffect(() => {
+        const handleAudioEnd = (e) => {
+            if (isRepeat) {
+                currentAudio.play();
+            } else {
+                if (
+                    currentSong.encodeId ===
+                    playlist[playlist.length - 1].encodeId
+                ) {
+                    handlePause();
+                } else {
+                    handleNavigatorSong(NEXT);
+                }
+            }
+        };
+
+        if (currentSong) {
+            currentAudio.addEventListener('ended', handleAudioEnd);
+
+            return () => {
+                currentAudio.removeEventListener('ended', handleAudioEnd);
+            };
+        }
+    }, [isRepeat]);
+
+    useEffect(() => {
+        // if (isShuffle) {
+        //     const songsTemp = [...playlist];
+        //     const playListShuffled = shufflePlaylist(songsTemp, currentSong);
+        //     setPlaylist();
+        //     dispatch(shuffle({playListShuffled}))
+        // } else {
+        //     dispatch(shuffle(playlist));
+        // }
+    }, [isShuffle]);
+
     return (
         <div onClick={handleOpenPlayer}>
             <div
@@ -57,21 +175,42 @@ function Footer() {
             >
                 {/* Controls */}
                 <div className="flex items-center text-white">
-                    <button className="text-2xl w-10 h-10 rounded-full">
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            handleNavigatorSong(PREV);
+                        }}
+                        className="text-2xl w-10 h-10 rounded-full"
+                    >
                         <FontAwesomeIcon icon={faBackwardStep} />
                     </button>
-                    <button className="text-3xl w-14 h-14 mr-6 ml-6 rounded-full">
-                        <FontAwesomeIcon icon={faPlay} />
+                    <button
+                        onClick={
+                            !isPlaying
+                                ? handlePlay
+                                : (e) => {
+                                      e.stopPropagation();
+                                      handlePause();
+                                  }
+                        }
+                        className="text-3xl w-14 h-14 mr-6 ml-6 rounded-full"
+                    >
+                        <FontAwesomeIcon icon={isPlaying ? faPause : faPlay} />
                     </button>
-                    {/* <button>
-                        <FontAwesomeIcon icon={faPause} />
-                    </button> */}
-                    <button className="text-2xl w-10 h-10 rounded-full">
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            handleNavigatorSong(NEXT);
+                        }}
+                        className="text-2xl w-10 h-10 rounded-full"
+                    >
                         <FontAwesomeIcon icon={faForwardStep} />
                     </button>
                     <p className="ml-8 text-sm text--primary-color">
-                        <span>0:00 / </span>
-                        <span>03:14</span>
+                        <span>{formatTime(timeSong)} / </span>
+                        <span>
+                            {convertSecondsToMMSS(currentSong.duration)}
+                        </span>
                     </p>
                 </div>
                 {/* Song */}
@@ -79,17 +218,15 @@ function Footer() {
                     <div className={`rounded overflow-hidden w-11 h-11 mr-3`}>
                         <img
                             className="w-full h-full"
-                            src="https://photo-resize-zmp3.zmdcdn.me/w240_r1x1_jpeg/banner/4/a/e/1/4ae1d8230755ee0fbe1acff06048324e.jpg"
+                            src={currentSong.thumbnailM}
                         />
                     </div>
                     <div className="mr-4">
                         <p className="text-white text-base font-semibold pb-1">
-                            Trái đất ôm mặt trời
+                            {currentSong.title}
                         </p>
                         <p className="text--primary-color">
-                            <Link>Kai Đinh, </Link>
-                            <Link>GREY D, </Link>
-                            <Link>Hoàng Thùy Linh</Link>
+                            {currentSong.artistsNames}
                         </p>
                     </div>
                     <button

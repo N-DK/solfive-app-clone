@@ -4,12 +4,15 @@ import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 import GlobalStyle from './components/GlobalStyles';
+import { ProviderMusic } from './store';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
     <React.StrictMode>
         <GlobalStyle>
-            <App />
+            <ProviderMusic>
+                <App />
+            </ProviderMusic>
         </GlobalStyle>
     </React.StrictMode>,
 );

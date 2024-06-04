@@ -1,9 +1,9 @@
-.wrapper {
+.wrapper.border-r {
     border-right: 1px solid #262626;
 }
 
-.border-b {
-    border-bottom: #262626 solid 1px;
+.border-t {
+    border-top: #262626 solid 1px;
 }
 
 .btn-login {
@@ -22,6 +22,6 @@
     }
 }
 
-.tab.active > a{
+.tab.active > a {
     background-color: #ffffff17;
 }

@@ -7,7 +7,13 @@ import { useEffect, useState } from 'react';
 
 const cx = classNames.bind(styles);
 
-function Sidebar() {
+const paths = [
+    { path: '/', pageName: 'Trang chủ', icon: faHome },
+    { path: '/explore', pageName: 'Khám phá', icon: faHome },
+    { path: '/library', pageName: 'Thư viện', icon: faHome },
+];
+
+function Sidebar({ sidebarState }) {
     const [path, setPath] = useState(window.location.pathname);
 
     useEffect(() => {
@@ -18,83 +24,65 @@ function Sidebar() {
         <div
             className={`${cx(
                 'wrapper',
-            )} bg-black top-0 bottom-0 w-60 p-2 fixed left-0`}
+            )} bg-black top-0 bottom-0 p-2 fixed left-0 ${
+                !sidebarState
+                    ? 'border-transparent bg-transparent w-20'
+                    : `${cx('border-r')} w-60`
+            }`}
         >
             <div className={`${cx('container')} pt-14`}>
-                <div className={`${cx('border-b')} pb-12 mb-4`}>
+                <div className={` pb-8 mb-4`}>
                     <ul>
-                        <li
-                            className={`${cx(
-                                'tab',
-                                `${path === '/' && 'active'}`,
-                            )} text-white mb-1 font-semibold`}
-                        >
-                            <Link
+                        {paths.map((route, index) => (
+                            <li
+                                key={index}
                                 className={`${cx(
-                                    '',
-                                )} text-white p-5 pt-3.5 pb-3.5 rounded mb-1 block`}
-                                to={'/'}
+                                    'tab',
+                                    `${path === route.path && 'active'}`,
+                                )} text-white mb-1 font-semibold`}
                             >
-                                <FontAwesomeIcon
-                                    icon={faHome}
-                                    className={`mr-3`}
-                                />
-                                <span>Trang chủ</span>
-                            </Link>
-                        </li>
-                        <li
-                            className={`${cx(
-                                'tab',
-                                `${path === '/explore' && 'active'}`,
-                            )} text-white mb-1 font-semibold`}
-                        >
-                            <Link
-                                className={`${cx(
-                                    '',
-                                )} text-white p-5 pt-3.5 pb-3.5 rounded mb-1 block`}
-                                to={'/explore'}
-                            >
-                                <FontAwesomeIcon
-                                    icon={faHome}
-                                    className={`mr-3`}
-                                />
-                                <span>Khám phá</span>
-                            </Link>
-                        </li>
-                        <li
-                            className={`${cx(
-                                'tab',
-                                `${path === '/library' && 'active'}`,
-                            )} text-white mb-1 font-semibold`}
-                        >
-                            <Link
-                                className={`${cx(
-                                    '',
-                                )} text-white p-5 pt-3.5 pb-3.5 rounded mb-1 block`}
-                                to={'/library'}
-                            >
-                                <FontAwesomeIcon
-                                    icon={faHome}
-                                    className={`mr-3`}
-                                />
-                                <span>Thư viện</span>
-                            </Link>
-                        </li>
+                                <Link
+                                    className={`${cx('')} text-white ${
+                                        sidebarState
+                                            ? 'p-5 pt-3.5 pb-3.5'
+                                            : 'flex flex-col justify-center items-center pt-3 pb-3'
+                                    } rounded mb-1 block`}
+                                    to={route.path}
+                                >
+                                    <FontAwesomeIcon icon={route.icon} />
+                                    <span
+                                        className={`${
+                                            !sidebarState
+                                                ? 'text-xs text-center pt-2'
+                                                : 'ml-3'
+                                        }`}
+                                    >
+                                        {route.pageName}
+                                    </span>
+                                </Link>
+                            </li>
+                        ))}
                     </ul>
                 </div>
-                <div className={`${cx('')} p-4`}>
-                    <button
-                        className={`${cx(
-                            'btn-login',
-                        )} border text-white w-full p-2.5 rounded-sm`}
-                    >
-                        Đăng nhập
-                    </button>
-                    <p className={`${cx('')} py-3 text-xs text--primary-color`}>
-                        Đăng nhập để tạo và chia sẻ danh sách phát, nhận các đề
-                        xuất được cá nhân hóa, v.v.
-                    </p>
-                </div>
+                {sidebarState && (
+                    <div className={`${cx('border-t')} p-4 pt-8`}>
+                        <button
+                            className={`${cx(
+                                'btn-login',
+                            )} border text-white w-full p-2.5 rounded-sm`}
+                        >
+                            Đăng nhập
+                        </button>
+                        <p
+                            className={`${cx(
+                                '',
+                            )} py-3 text-xs text--primary-color`}
+                        >
+                            Đăng nhập để tạo và chia sẻ danh sách phát, nhận các
+                            đề xuất được cá nhân hóa, v.v.
+                        </p>
+                    </div>
+                )}
             </div>
         </div>
     );

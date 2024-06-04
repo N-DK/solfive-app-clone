@@ -4,27 +4,33 @@ import { Link } from 'react-router-dom';
 
 const cx = classNames.bind(styles);
 
-function AlbumCard() {
+function AlbumCard({ data }) {
     return (
-        <div className={`mr-4 w-44`}>
+        <div className={`w-44`}>
             <div className={` rounded overflow-hidden w-44 h-44`}>
-                <img
-                    className="w-full h-full"
-                    src="https://photo-resize-zmp3.zmdcdn.me/w320_r1x1_jpeg/cover/4/5/4/9/45493e859cde749c75fb4377c14d0db3.jpg"
-                />
+                <img className="w-full h-full" src={data?.thumbnailM} />
             </div>
-            <Link
-                to={`/playlist?id=${'ZOCIIUWW'}`}
-                className={`${cx('name')} text-white mt-4 block leading-normal`}
-            >
-                Nhạc Lofi Chill Gây Nghiện
-            </Link>
-            <p className={`${cx('artists')} text--primary-color text-sm mt-2 truncate`}>
-                <Link to={'/artist?id=Kai-Dinh'}>Hoài Lâm, </Link>
-                <Link>Hoài Lâm, </Link>
-                <Link>Hoài Lâm, </Link>
-                <Link>Hồ Quan Hiếu</Link>
-            </p>
+            <div className="h-24 mt-4">
+                <Link
+                    to={`/playlist?id=${data?.encodeId}`}
+                    className={`${cx(
+                        'name',
+                    )} text-white leading-normal inline-block`}
+                >
+                    {data?.title}
+                </Link>
+                <p
+                    className={`${cx(
+                        'artists',
+                    )} text--primary-color text-sm mt-2 truncate`}
+                >
+                    {data?.artists?.map((artist, index) => (
+                        <Link key={index} to={`/artist?id=${artist.alias}`}>
+                            {artist.name},{' '}
+                        </Link>
+                    ))}
+                </p>
+            </div>
         </div>
     );
 }
