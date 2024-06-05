@@ -56,15 +56,54 @@ function NextInPlayList({ data, songs }) {
 }
 
 const Lyric = ({ data }) => {
+    const [state, dispatch] = useStore();
+    const { currentAudio, currentSong } = state;
+    const [timeSong, setTimeSong] = useState();
+    const lyricActiveRef = useRef(null);
+
+    useEffect(() => {
+        if (lyricActiveRef) {
+            lyricActiveRef?.current?.scrollIntoView({ behavior: 'smooth' });
+        }
+    }, [timeSong]);
+
+    useEffect(() => {
+        if (currentAudio) {
+            currentAudio.addEventListener('timeupdate', () => {
+                setTimeSong(currentAudio.currentTime);
+            });
+        }
+    }, [currentSong, currentAudio]);
+
     return (
         <div className={`${cx('list-results')} mt-4`}>
             <div className="text-white leading-8">
-                {data?.sentences?.map((sentence, index) => (
-                    <p key={index}>
-                        {sentence?.words?.map((word, index) => (
-                            <span key={index}>{`${word?.data} `}</span>
-                        ))}
-                    </p>
+                {chunkArray(data?.sentences, 8).map((data, index) => (
+                    <div key={index} className="pb-7">
+                        {data?.map((sentence, index) => {
+                            const active =
+                                timeSong * 1000 >=
+                                    sentence?.words[0]?.startTime &&
+                                timeSong * 1000 <=
+                                    sentence?.words[sentence?.words?.length - 1]
+                                        ?.endTime;
+                            return (
+                                <p
+                                    ref={active ? lyricActiveRef : null}
+                                    key={index}
+                                    className={`${cx(
+                                        `${active ? 'active-lyric' : ''}`,
+                                    )}`}
+                                >
+                                    {sentence?.words?.map((word, index) => (
+                                        <span
+                                            key={index}
+                                        >{`${word?.data} `}</span>
+                                    ))}
+                                </p>
+                            );
+                        })}
+                    </div>
                 ))}
             </div>
         </div>

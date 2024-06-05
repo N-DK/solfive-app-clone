@@ -27,7 +27,10 @@ function Artist({ data }) {
                 <img width="100%" height="100%" src={data?.thumbnailM} />
             </div>
             <div className="w-full mt-3">
-                <Link to={`/artist?id=${data?.alias}`} className="text-white text-base text-center font-semibold block">
+                <Link
+                    to={`/artist?id=${data?.alias}`}
+                    className="text-white text-base text-center font-semibold block"
+                >
                     {data?.name}
                 </Link>
                 <p className="text--primary-color text-center block mt-2">
@@ -38,24 +41,26 @@ function Artist({ data }) {
     );
 }
 
-function ListArtist({ data }) {
+function ListArtist({ data, title = 'Nghệ sỹ tương tự' }) {
     const slider = useRef(null);
     return (
         <div className={`${cx('wrapper')}`}>
             <div className="flex justify-between items-center">
                 <div className={`pt-2 pb-2`}>
-                    <h1 className="font-semibold text-2xl">Nghệ sỹ tương tự</h1>
+                    <h1 className="font-semibold text-2xl text-white">
+                        {title}
+                    </h1>
                 </div>
                 <div className={`flex items-center`}>
                     <button
                         onClick={() => slider?.current?.slickPrev()}
-                        className={`w-10 h-10 border rounded-full flex items-center justify-center mr-2`}
+                        className={`w-10 h-10 border rounded-full flex items-center justify-center mr-2 text-white`}
                     >
                         <FontAwesomeIcon icon={faChevronLeft} />
                     </button>
                     <button
                         onClick={() => slider?.current?.slickNext()}
-                        className={`w-10 h-10 border rounded-full flex items-center justify-center`}
+                        className={`w-10 h-10 border rounded-full flex items-center justify-center text-white`}
                     >
                         <FontAwesomeIcon icon={faChevronRight} />
                     </button>

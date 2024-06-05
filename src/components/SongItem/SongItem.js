@@ -111,7 +111,9 @@ function SongItem({ data, size = 'large', playListId }) {
             className={`${cx(
                 'wrapper',
                 `${
-                    data.encodeId === state.currentSong?.encodeId
+                    data.encodeId === currentSong?.encodeId &&
+                    data.encodeId &&
+                    currentSong?.encodeId
                         ? 'active'
                         : ''
                 }`,
