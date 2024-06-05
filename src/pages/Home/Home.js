@@ -2,18 +2,24 @@ import classNames from 'classnames/bind';
 import styles from './Home.module.scss';
 import { ListPlaylist } from '~/components/ListPlaylist';
 import { Trending } from '~/components/Trending';
-import { useEffect, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { getHome } from '~/service';
+import { DefaultContext } from '~/components/layouts/DefaultLayout/DefaultLayout';
 
 const cx = classNames.bind(styles);
 
 function Home() {
     const [data, setData] = useState([]);
+    const { setProgress } = useContext(DefaultContext);
 
     useEffect(() => {
         const fetch = async () => {
+            setProgress(10);
+            setProgress(40);
+            setProgress(70);
             const res = await getHome();
             setData(res.data.data);
+            setProgress(100);
         };
 
         fetch();

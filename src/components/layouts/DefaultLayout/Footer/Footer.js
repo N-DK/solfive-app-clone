@@ -8,24 +8,31 @@ import {
     faDownload,
     faEllipsisV,
     faForwardStep,
-    faHeart,
     faPause,
     faPlay,
     faPlusCircle,
     faRepeat,
     faShare,
     faShuffle,
+    faSpinner,
     faVolumeHigh,
     faVolumeMute,
 } from '@fortawesome/free-solid-svg-icons';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { useEffect, useRef, useState } from 'react';
+import { useContext, useEffect, useRef, useState } from 'react';
 import { useStore } from '~/store/hooks';
 import { pauseSong, playSong, setPlaylist } from '~/store/actions';
 import { getPlaylistById, getSoundSongById } from '~/service';
 import { convertSecondsToMMSS, formatTime, shufflePlaylist } from '~/utils';
-import { faPlayCircle, faUser } from '@fortawesome/free-regular-svg-icons';
+import {
+    faHeart,
+    faPlayCircle,
+    faUser,
+} from '@fortawesome/free-regular-svg-icons';
 import { MenuDetails } from '~/components/MenuDetails';
+import { DefaultContext } from '../DefaultLayout';
+import axios from 'axios';
+import { saveAs } from 'file-saver';
 
 const cx = classNames.bind(styles);
 
@@ -38,19 +45,17 @@ function Footer() {
     const [state, dispatch] = useStore();
     const { currentSong, playListId, isPlaying, currentAudio, playlist } =
         state;
-    const [navigationHistory, setNavigationHistory] = useState([]);
     const [volume, setVolume] = useState(1);
     const [isRepeat, setIsRepeat] = useState(false);
-    const [isShuffle, setIsShuffle] = useState(false);
+    const [isShuffle, setIsShuffle] = useState(0);
     const [timeSong, setTimeSong] = useState();
     const [visible, setVisible] = useState(false);
     const [isMute, setIsMute] = useState(false);
-    const [isPlayerOpened, setIsPlayerOpened] = useState(
-        location.pathname.includes('/player'),
-    );
-
     const rangeRef = useRef(null);
     const volumeRef = useRef(null);
+    const [backward, setBackward] = useState([]);
+    const { openModal, loading, setLoading, openPlayer, setOpenPlayer } =
+        useContext(DefaultContext);
 
     const show = () => setVisible(true);
     const hide = () => setVisible(false);
@@ -63,6 +68,7 @@ function Footer() {
 
     const handleNavigatorSong = (type) => {
         const handle = async () => {
+            setLoading(true);
             const index = getIndexSongInPlaylist(currentSong);
             if (index + type >= 0 && index + type < playlist.length) {
                 const song = playlist[index + type];
@@ -85,8 +91,30 @@ function Footer() {
                 );
                 audio.play();
             }
+            setLoading(false);
         };
         handle();
+    };
+
+    const handleDownload = (title) => {
+        // setDownloading(true);
+        console.log('Đang chuẩn bị file');
+        const fetch = async () => {
+            const res = await getSoundSongById(currentSong?.encodeId);
+            const url = res.data['128'];
+            axios({
+                url,
+                method: 'GET',
+                responseType: 'blob',
+            }).then((response) => {
+                const blob = new Blob([response.data], { type: 'audio/mp3' });
+                saveAs(blob, title + '.mp3');
+                console.log('Đã hoàn tất');
+                // setDownloading(false);
+            });
+        };
+
+        fetch();
     };
 
     const handlePlay = (e) => {
@@ -108,18 +136,29 @@ function Footer() {
     };
 
     const handleOpenPlayer = () => {
-        if (!isPlayerOpened) {
-            navigate(`/player?id=${currentSong.encodeId}&listId=${playListId}`);
-            setIsPlayerOpened(true);
-        } else {
-            if (navigationHistory.length > 2) {
-                navigate(-1);
-            } else {
-                navigate('/');
+        if (!openPlayer) {
+            if (!location.pathname.includes('/player')) {
+                setBackward((prev) => [
+                    ...prev,
+                    location.pathname + location.search,
+                ]);
             }
-            setIsPlayerOpened(false);
+            navigate(`/player?id=${currentSong.encodeId}&listId=${playListId}`);
+            setOpenPlayer(true);
+        } else {
+            setOpenPlayer(false);
+            setTimeout(() => {
+                navigate(backward[0] ?? '/');
+                setBackward([]);
+            }, 200);
         }
     };
+
+    useEffect(() => {
+        if (!backward[0] && location.pathname.includes('/player')) {
+            handleOpenPlayer();
+        }
+    }, []);
 
     useEffect(() => {
         if (rangeRef && timeSong) {
@@ -147,13 +186,6 @@ function Footer() {
     }, [currentSong, currentAudio]);
 
     useEffect(() => {
-        setNavigationHistory((prevHistory) => [
-            ...prevHistory,
-            location.pathname,
-        ]);
-    }, [location]);
-
-    useEffect(() => {
         const handleAudioEnd = () => {
             if (isRepeat) {
                 currentAudio.play();
@@ -163,31 +195,26 @@ function Footer() {
                     playlist[playlist.length - 1].encodeId
                 ) {
                     handlePause();
-                    console.log('pause');
                 } else {
                     handleNavigatorSong(NEXT);
-                    console.log('next');
                 }
             }
         };
 
         if (currentSong) {
-            currentAudio.addEventListener('ended', handleAudioEnd);
-
+            currentAudio?.addEventListener('ended', handleAudioEnd);
             return () => {
                 currentAudio.removeEventListener('ended', handleAudioEnd);
             };
         }
-    }, [isRepeat]);
+    }, [isRepeat, currentAudio, currentSong]);
 
     useEffect(() => {
-        // if (isShuffle) {
-        // }
-        const songsTemp = [...playlist];
-        const playListShuffled = shufflePlaylist(songsTemp, currentSong);
-        dispatch(setPlaylist(playListShuffled));
-        // } else {
-        //     dispatch(shuffle(playlist));
+        if (isShuffle > 0) {
+            const songsTemp = [...playlist];
+            const playListShuffled = shufflePlaylist(songsTemp, currentSong);
+            dispatch(setPlaylist(playListShuffled));
+        }
     }, [isShuffle]);
 
     return (
@@ -222,7 +249,16 @@ function Footer() {
                         }
                         className="text-3xl w-14 h-14 mr-6 ml-6 rounded-full"
                     >
-                        <FontAwesomeIcon icon={isPlaying ? faPause : faPlay} />
+                        {loading ? (
+                            <FontAwesomeIcon
+                                icon={faSpinner}
+                                className="loading"
+                            />
+                        ) : (
+                            <FontAwesomeIcon
+                                icon={isPlaying ? faPause : faPlay}
+                            />
+                        )}
                     </button>
                     <button
                         onClick={(e) => {
@@ -257,7 +293,10 @@ function Footer() {
                         </p>
                     </div>
                     <button
-                        onClick={(e) => e.stopPropagation()}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            openModal();
+                        }}
                         className="rounded-full w-10 h-10 text--primary-color text-xl lex justify-center items-center mr-3"
                     >
                         <FontAwesomeIcon icon={faHeart} />
@@ -269,22 +308,35 @@ function Footer() {
                             {
                                 title: 'Bắt đầu phát nhạc',
                                 icon: faPlayCircle,
-                                handle: () => {},
+                                handle: handlePlay,
                             },
                             {
                                 title: 'Thêm vào danh sách phát',
                                 icon: faPlusCircle,
-                                handle: () => {},
+                                handle: function (e) {
+                                    e.stopPropagation();
+                                    openModal();
+                                },
                             },
                             {
                                 title: 'Chuyển đến trang nghệ sĩ',
                                 icon: faUser,
-                                handle: () => {},
+                                handle: (e) => {
+                                    e.stopPropagation();
+                                    navigate(
+                                        `/artist?id=${currentSong.artists[0].alias}`,
+                                    );
+                                },
                             },
                             {
                                 title: 'Tải nhạc',
                                 icon: faDownload,
-                                handle: () => {},
+                                handle: (e) => {
+                                    e.stopPropagation();
+                                    handleDownload(
+                                        `Solfive - ${currentSong.title}`,
+                                    );
+                                },
                             },
                             {
                                 title: 'Chia sẻ',
@@ -355,7 +407,7 @@ function Footer() {
                     <button
                         onClick={(e) => {
                             e.stopPropagation();
-                            setIsShuffle((prev) => !prev);
+                            setIsShuffle((prev) => prev + 1);
                         }}
                         className="rounded-full w-10 h-10 text--primary-color text-xl flex justify-center items-center mr-3"
                     >
@@ -373,9 +425,7 @@ function Footer() {
                     <button
                         className={`${cx(
                             `${
-                                isPlayerOpened
-                                    ? 'isPlayerOpened'
-                                    : 'isPlayerClosed'
+                                openPlayer ? 'isPlayerOpened' : 'isPlayerClosed'
                             }`,
                         )} rounded-full w-10 h-10 text--primary-color text-xl flex justify-center items-center`}
                     >

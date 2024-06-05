@@ -41,8 +41,9 @@ function Artist({ data }) {
     );
 }
 
-function ListArtist({ data, title = 'Nghệ sỹ tương tự' }) {
+function ListArtist({ data, title = 'Nghệ sỹ tương tự', settingMore }) {
     const slider = useRef(null);
+    const settings = { ..._settings_, ...settingMore };
     return (
         <div className={`${cx('wrapper')}`}>
             <div className="flex justify-between items-center">
@@ -67,7 +68,7 @@ function ListArtist({ data, title = 'Nghệ sỹ tương tự' }) {
                 </div>
             </div>
             <div>
-                <Slider ref={slider} {..._settings_}>
+                <Slider ref={slider} {...settings}>
                     {data?.map((artist, index) => (
                         <Artist key={index} data={artist} />
                     ))}

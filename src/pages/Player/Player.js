@@ -1,7 +1,7 @@
 import { SongItem } from '~/components/SongItem';
 import styles from './Player.module.scss';
 import classNames from 'classnames/bind';
-import { useEffect, useRef, useState } from 'react';
+import { useContext, useEffect, useRef, useState } from 'react';
 import { useQuery } from '~/hooks';
 import {
     getArtistById,
@@ -15,12 +15,14 @@ import { ListArtist } from '~/components/ListArtist';
 import {
     faChevronLeft,
     faChevronRight,
+    faSpinner,
 } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import Slider from 'react-slick';
 import { useStore } from '~/store/hooks';
 import { chunkArray, getSectionBySectionId } from '~/utils';
 import { pauseSong, playSong } from '~/store/actions';
+import { DefaultContext } from '~/components/layouts/DefaultLayout/DefaultLayout';
 
 const cx = classNames.bind(styles);
 
@@ -133,84 +135,82 @@ function Relate({ artist, similarArtist, songs }) {
     };
 
     return (
-        <div className="text-white">
-            <div className={`${cx('list-results')}`}>
-                <div>
-                    <div className="flex justify-between items-center">
-                        <div className={`pt-2 pb-2`}>
-                            <h1 className="font-semibold text-2xl">
-                                Có thể bạn cũng thích
-                            </h1>
-                        </div>
-                        <div className={`flex items-center`}>
-                            <button
-                                onClick={() => slider?.current?.slickPrev()}
-                                className={`w-10 h-10 border rounded-full flex items-center justify-center mr-2`}
-                            >
-                                <FontAwesomeIcon icon={faChevronLeft} />
-                            </button>
-                            <button
-                                onClick={() => slider?.current?.slickNext()}
-                                className={`w-10 h-10 border rounded-full flex items-center justify-center`}
-                            >
-                                <FontAwesomeIcon icon={faChevronRight} />
-                            </button>
-                        </div>
+        <div className={`${cx('list-results')} text-white`}>
+            <div>
+                <div className="flex justify-between items-center">
+                    <div className={`pt-2 pb-2`}>
+                        <h1 className="font-semibold text-2xl">
+                            Có thể bạn cũng thích
+                        </h1>
                     </div>
-                    <div className="custom-carousel">
-                        <Slider ref={slider} {..._settings_}>
-                            {chunkArray(songs, 4)?.map((arrMini, index) => (
-                                <div key={index}>
-                                    {arrMini?.map((item, index) => (
-                                        <SongItem
-                                            key={index}
-                                            size="small"
-                                            data={item}
-                                            playListId={artist?.playlistId}
-                                        />
-                                    ))}
-                                </div>
-                            ))}
-                        </Slider>
+                    <div className={`flex items-center`}>
+                        <button
+                            onClick={() => slider?.current?.slickPrev()}
+                            className={`w-10 h-10 border rounded-full flex items-center justify-center mr-2`}
+                        >
+                            <FontAwesomeIcon icon={faChevronLeft} />
+                        </button>
+                        <button
+                            onClick={() => slider?.current?.slickNext()}
+                            className={`w-10 h-10 border rounded-full flex items-center justify-center`}
+                        >
+                            <FontAwesomeIcon icon={faChevronRight} />
+                        </button>
                     </div>
                 </div>
-                <div className="mb-8">
-                    <ListPlaylist
-                        title={'Danh sách phát đề xuất'}
-                        data={getSectionBySectionType('playlist')}
-                        settings={{
-                            dots: false,
-                            infinite: false,
-                            speed: 500,
-                            slidesToShow: 3,
-                            slidesToScroll: 1,
-                            arrows: false,
-                            marginRight: 2,
+                <div className="custom-carousel">
+                    <Slider ref={slider} {..._settings_}>
+                        {chunkArray(songs, 4)?.map((arrMini, index) => (
+                            <div key={index}>
+                                {arrMini?.map((item, index) => (
+                                    <SongItem
+                                        key={index}
+                                        size="small"
+                                        data={item}
+                                        playListId={artist?.playlistId}
+                                    />
+                                ))}
+                            </div>
+                        ))}
+                    </Slider>
+                </div>
+            </div>
+            <div className="mb-8">
+                <ListPlaylist
+                    title={'Danh sách phát đề xuất'}
+                    data={getSectionBySectionType('playlist')}
+                    settings={{
+                        dots: false,
+                        infinite: false,
+                        speed: 500,
+                        slidesToShow: 3,
+                        slidesToScroll: 1,
+                        arrows: false,
+                        marginRight: 2,
+                    }}
+                />
+            </div>
+            <div className="mb-8">
+                <ListArtist data={similarArtist} />
+            </div>
+            {artist?.national && (
+                <div>
+                    <h1 className="text-2xl font-semibold">
+                        Giới thiệu nghệ sĩ
+                    </h1>
+                    <p className="pb-2">Quốc gia: {artist?.national}</p>
+                    <p className="pb-2">Tên Thật: {artist?.realname}</p>
+                    {artist?.birthday && (
+                        <p className="pb-2">Năm sinh: {artist?.birthday}</p>
+                    )}
+                    <div
+                        className="leading-7"
+                        dangerouslySetInnerHTML={{
+                            __html: artist?.biography,
                         }}
                     />
                 </div>
-                <div className="mb-8">
-                    <ListArtist data={similarArtist} />
-                </div>
-                {artist?.national && (
-                    <div>
-                        <h1 className="text-2xl font-semibold">
-                            Giới thiệu nghệ sĩ
-                        </h1>
-                        <p className="pb-2">Quốc gia: {artist?.national}</p>
-                        <p className="pb-2">Tên Thật: {artist?.realname}</p>
-                        {artist?.birthday && (
-                            <p className="pb-2">Năm sinh: {artist?.birthday}</p>
-                        )}
-                        <div
-                            className="leading-7"
-                            dangerouslySetInnerHTML={{
-                                __html: artist?.biography,
-                            }}
-                        />
-                    </div>
-                )}
-            </div>
+            )}
         </div>
     );
 }
@@ -226,6 +226,7 @@ function Player() {
     const [component, setComponent] = useState(0);
     const [dataSongNextInPlayList, setDataSongInNextPlaylist] = useState([]);
     const [dataArtist, setDataArtist] = useState();
+    const [loading, setLoading] = useState(false);
     const [dataPlaylistArtist, setDataPlaylistArtist] = useState();
     const [dataLyric, setDataLyric] = useState();
     const [song, setSong] = useState();
@@ -238,16 +239,17 @@ function Player() {
     const query = useQuery();
     const id = query.get('id');
     const listId = query.get('listId');
+    const { openPlayer, setOpenPlayer } = useContext(DefaultContext);
 
     useState(() => {
         const fetch = async () => {
-            // setLoading(true);
+            setLoading(true);
             const songRes = await getSongById(id);
             const res = await getSoundSongById(id);
             const playlist = await getPlaylistById(listId);
             const song = songRes.data;
             const songs = playlist?.data?.song?.items;
-            const URL = res.data['128'];
+            const URL = res?.data['128'];
 
             var audio = new Audio(URL);
 
@@ -266,24 +268,18 @@ function Player() {
                     playlist: songs,
                 }),
             );
-            dispatch(pauseSong(audio));
-            // audio.play();
-            // setLoading(false);
+            if (audio.paused) dispatch(pauseSong(audio));
+            setLoading(false);
         };
         fetch();
     }, []);
 
-    // useEffect(() => {
-    //     if (currentAudio && !isPlaying) {
-    //         // currentAudio.play();
-    //         setDataSongInNextPlaylist(playlist);
-    //     }
-    // }, [state]);
-
     useEffect(() => {
         const fetch = async () => {
+            setLoading(true);
             const res = await getPlaylistById(listId);
             setDataSongInNextPlaylist(res.data);
+            setLoading(false);
         };
         fetch();
     }, [listId]);
@@ -306,19 +302,23 @@ function Player() {
     }, [id]);
 
     useEffect(() => {
+        // setLoading(true);
         if (component === 2) {
             const artist = song?.artists[0];
             const fetch = async () => {
+                setLoading(true);
                 const artistResult = await getArtistById(artist.alias);
                 const playlistResults = await getPlaylistById(
                     artist.playlistId,
                 );
                 setDataPlaylistArtist(playlistResults.data);
                 setDataArtist(artistResult.data);
+                setLoading(false);
             };
 
             fetch();
         }
+        // setLoading(false);
     }, [component, song]);
 
     useEffect(() => {
@@ -339,6 +339,7 @@ function Player() {
         <div
             className={`${cx(
                 'wrapper',
+                `${openPlayer ? 'in' : 'out'}`,
             )} mt-20 fixed right-0 flex justify-between pr-48 pl-48 top-0`}
         >
             <div className={`${cx('container')} flex items-start`}>
@@ -365,7 +366,7 @@ function Player() {
                         </div>
                     </div>
                 </div>
-                <div className={`w-5/12`}>
+                <div className={`w-5/12 overflow-hidden`}>
                     {/* Tab */}
                     <div
                         className={`${cx(
@@ -387,25 +388,44 @@ function Player() {
                         ))}
                         <span ref={line} className={`${cx('line')}`}></span>
                     </div>
-                    <div>
-                        {component === 0 && (
-                            <NextInPlayList
-                                data={dataSongNextInPlayList}
-                                songs={
-                                    playlist?.length === 0 || !playlist
-                                        ? dataSongNextInPlayList?.song?.items
-                                        : playlist
-                                }
-                            />
-                        )}
+                    <div className="w-full">
+                        {component === 0 &&
+                            (loading ? (
+                                <div>
+                                    <FontAwesomeIcon
+                                        icon={faSpinner}
+                                        className="loading"
+                                    />
+                                </div>
+                            ) : (
+                                <NextInPlayList
+                                    data={dataSongNextInPlayList}
+                                    songs={
+                                        playlist?.length === 0 || !playlist
+                                            ? dataSongNextInPlayList?.song
+                                                  ?.items
+                                            : playlist
+                                    }
+                                />
+                            ))}
                         {component === 1 && <Lyric data={dataLyric} />}
-                        {component === 2 && (
-                            <Relate
-                                artist={dataArtist}
-                                similarArtist={dataSongNextInPlayList?.artists}
-                                songs={dataPlaylistArtist?.song?.items}
-                            />
-                        )}
+                        {component === 2 &&
+                            (loading ? (
+                                <div className="text-white flex justify-center text-3xl mt-10">
+                                    <FontAwesomeIcon
+                                        icon={faSpinner}
+                                        className="loading"
+                                    />
+                                </div>
+                            ) : (
+                                <Relate
+                                    artist={dataArtist}
+                                    similarArtist={
+                                        dataSongNextInPlayList?.artists
+                                    }
+                                    songs={dataPlaylistArtist?.song?.items}
+                                />
+                            ))}
                     </div>
                 </div>
             </div>

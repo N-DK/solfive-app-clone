@@ -8,7 +8,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { SongItem } from '~/components/SongItem';
 import { useQuery } from '~/hooks';
-import { useEffect, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { getPlaylistById, getSoundSongById } from '~/service';
 import { convertSeconds } from '~/utils';
 import HeadlessTippy from '@tippyjs/react/headless';
@@ -16,6 +16,7 @@ import { MenuDetails } from '~/components/MenuDetails';
 import { useStore } from '~/store/hooks';
 import { playSong } from '~/store/actions';
 import { useNavigate } from 'react-router-dom';
+import { DefaultContext } from '~/components/layouts/DefaultLayout/DefaultLayout';
 
 const cx = classNames.bind(styles);
 
@@ -28,13 +29,14 @@ function Playlist() {
     const navigator = useNavigate();
     const [state, dispatch] = useStore();
     const { currentAudio, currentSong } = state;
+    const { setLoading, setProgress } = useContext(DefaultContext);
 
     const show = () => setVisible(true);
     const hide = () => setVisible(false);
 
     const handlePlayRandom = () => {
         const fetch = async () => {
-            // setLoading(true);
+            setLoading(true);
             const playlist = await getPlaylistById(id);
             const songs = playlist?.data?.song?.items;
             const data = songs[Math.floor(Math.random() * songs.length)];
@@ -60,15 +62,19 @@ function Playlist() {
             );
             audio.play();
             navigator(`/player?id=${data.encodeId}&listId=${id}`);
-            // setLoading(false);
+            setLoading(false);
         };
         fetch();
     };
 
     useEffect(() => {
         const fetch = async () => {
+            setProgress(10);
+            setProgress(40);
+            setProgress(70);
             const res = await getPlaylistById(id);
             setData(res?.data);
+            setProgress(100);
         };
 
         fetch();

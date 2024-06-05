@@ -9,6 +9,7 @@ import {
     faPlay,
     faPlusCircle,
     faShare,
+    faSpinner,
 } from '@fortawesome/free-solid-svg-icons';
 import {
     faHeart,
@@ -24,8 +25,7 @@ import { useQuery } from '~/hooks';
 import { MenuDetails } from '../MenuDetails';
 import axios from 'axios';
 import { saveAs } from 'file-saver';
-import { ModalContext } from '../layouts/DefaultLayout/DefaultLayout';
-
+import { DefaultContext } from '../layouts/DefaultLayout/DefaultLayout';
 const cx = classNames.bind(styles);
 
 function SongItem({ data, size = 'large', playListId }) {
@@ -33,11 +33,10 @@ function SongItem({ data, size = 'large', playListId }) {
     const navigator = useNavigate();
     const [state, dispatch] = useStore();
     const { isPlaying, currentAudio, currentSong } = state;
-    const [loading, setLoading] = useState(false);
     const [visible, setVisible] = useState(false);
     const query = useQuery();
     const listId = query.get('listId');
-    const openModal = useContext(ModalContext);
+    const { openModal, loading, setLoading } = useContext(DefaultContext);
 
     const show = () => setVisible(true);
     const hide = () => setVisible(false);
@@ -55,7 +54,7 @@ function SongItem({ data, size = 'large', playListId }) {
             const res = await getSoundSongById(data.encodeId);
             const playlist = await getPlaylistById(playListId ?? listId);
             const songs = playlist?.data?.song?.items;
-            const URL = res.data['128'];
+            const URL = res?.data['128'];
 
             var audio = new Audio(URL);
 
@@ -140,15 +139,25 @@ function SongItem({ data, size = 'large', playListId }) {
                                     'btn_play',
                                 )} absolute top-0 left-0 right-0 bottom-0 border-0`}
                             >
-                                <FontAwesomeIcon
-                                    icon={
-                                        isPlaying &&
-                                        data.encodeId ===
-                                            state.currentSong?.encodeId
-                                            ? faPause
-                                            : faPlay
-                                    }
-                                />
+                                {loading &&
+                                data.encodeId === currentSong?.encodeId &&
+                                data.encodeId &&
+                                currentSong?.encodeId ? (
+                                    <FontAwesomeIcon
+                                        icon={faSpinner}
+                                        className="loading"
+                                    />
+                                ) : (
+                                    <FontAwesomeIcon
+                                        icon={
+                                            isPlaying &&
+                                            data.encodeId ===
+                                                state.currentSong?.encodeId
+                                                ? faPause
+                                                : faPlay
+                                        }
+                                    />
+                                )}
                             </button>
                         </div>
 

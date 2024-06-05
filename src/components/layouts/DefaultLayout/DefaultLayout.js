@@ -12,14 +12,16 @@ import { Modal } from '~/components/Modal';
 
 const cx = classNames.bind(styles);
 
-export const ModalContext = createContext();
+export const DefaultContext = createContext();
 
-function DefaultLayout({ children }) {
+function DefaultLayout({ children, setProgress }) {
     const [state, dispatch] = useStore();
     const { currentSong } = state;
     // True is Open, False is close
     const [sidebarState, setSidebarState] = useState(true);
     const [open, setOpen] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [openPlayer, setOpenPlayer] = useState(false);
 
     const show = () => setOpen(true);
 
@@ -28,7 +30,16 @@ function DefaultLayout({ children }) {
     };
 
     return (
-        <ModalContext.Provider value={show}>
+        <DefaultContext.Provider
+            value={{
+                openModal: show,
+                loading,
+                setLoading,
+                setProgress,
+                openPlayer,
+                setOpenPlayer,
+            }}
+        >
             <div className={`${cx('wrapper')} flex min-h-screen`}>
                 <Sidebar sidebarState={sidebarState} />
                 <div
@@ -127,7 +138,7 @@ function DefaultLayout({ children }) {
                     </div>
                 </Modal>
             </div>
-        </ModalContext.Provider>
+        </DefaultContext.Provider>
     );
 }
 

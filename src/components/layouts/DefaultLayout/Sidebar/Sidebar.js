@@ -4,7 +4,7 @@ import classNames from 'classnames/bind';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faHome } from '@fortawesome/free-solid-svg-icons';
 import { useContext, useEffect, useState } from 'react';
-import { ModalContext } from '../DefaultLayout';
+import { DefaultContext } from '../DefaultLayout';
 
 const cx = classNames.bind(styles);
 
@@ -16,7 +16,7 @@ const paths = [
 
 function Sidebar({ sidebarState }) {
     const [path, setPath] = useState(window.location.pathname);
-    const show = useContext(ModalContext);
+    const value = useContext(DefaultContext);
     useEffect(() => {
         setPath(window.location.pathname);
     }, [window.location.pathname]);
@@ -68,7 +68,7 @@ function Sidebar({ sidebarState }) {
                 {sidebarState && (
                     <div className={`${cx('border-t')} p-4 pt-8`}>
                         <button
-                            onClick={show}
+                            onClick={value.openModal}
                             className={`${cx(
                                 'btn-login',
                             )} border text-white w-full p-2.5 rounded-sm`}

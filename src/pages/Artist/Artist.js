@@ -4,9 +4,10 @@ import classNames from 'classnames/bind';
 import { Link } from 'react-router-dom';
 import { ListPlaylist } from '~/components/ListPlaylist';
 import { useQuery } from '~/hooks';
-import { useEffect, useRef, useState } from 'react';
+import { useContext, useEffect, useRef, useState } from 'react';
 import { getArtistById } from '~/service';
 import { getSectionBySectionId } from '~/utils';
+import { DefaultContext } from '~/components/layouts/DefaultLayout/DefaultLayout';
 
 const cx = classNames.bind(styles);
 
@@ -17,6 +18,7 @@ function Artist() {
 
     const [data, setData] = useState();
     const [showMore, setShowMore] = useState();
+    const { setProgress } = useContext(DefaultContext);
 
     const handleShowMore = () => {
         if (contentRef) {
@@ -29,13 +31,17 @@ function Artist() {
 
     useEffect(() => {
         const fetch = async () => {
+            setProgress(10);
+            setProgress(40);
+            setProgress(70);
             const res = await getArtistById(id);
             console.log(res.data);
             setData(res.data);
+            setProgress(100);
         };
 
         fetch();
-    }, []);
+    }, [id]);
 
     return (
         <div className={`${cx('wrapper')} text-white`}>
@@ -88,7 +94,7 @@ function Artist() {
                 </div>
                 <ListPlaylist
                     title={'Album'}
-                    data={getSectionBySectionId('aSingle')?.items}
+                    data={getSectionBySectionId(data, 'aSingle')?.items}
                 />
             </div>
         </div>

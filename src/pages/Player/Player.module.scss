@@ -1,6 +1,7 @@
 .wrapper {
     left: 240px;
     animation: in 0.4s ease-in-out;
+    background-color: #000;
     .list-results {
         max-height: 750px;
         overflow-y: overlay;
@@ -35,6 +36,14 @@
     }
 }
 
+.wrapper.out {
+    animation: out 0.4s ease-in-out forwards;
+}
+
+.wrapper.in {
+    animation: in 0.4s ease-in-out;
+}
+
 @keyframes inImgSmall {
     0% {
         opacity: 0;
@@ -51,23 +60,23 @@
 @keyframes in {
     0% {
         transform: translateY(110%);
-        opacity: 0;
+        // opacity: 0;
     }
 
     100% {
         transform: translateY(0%);
-        opacity: 1;
+        // opacity: 1;
     }
 }
 
 @keyframes out {
     0% {
         transform: translateY(0%);
-        opacity: 0;
+        opacity: 1;
     }
 
     100% {
         transform: translateY(110%);
-        opacity: 1;
+        opacity: 0;
     }
 }
