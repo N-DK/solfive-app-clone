@@ -6,9 +6,11 @@ import {
     faMagnifyingGlass,
     faXmark,
 } from '@fortawesome/free-solid-svg-icons';
-import { useEffect, useRef, useState } from 'react';
+import { useContext, useEffect, useRef, useState } from 'react';
 import { useDebounce } from '~/hooks';
 import { search } from '~/service/searchService';
+import { Modal } from '~/components/Modal';
+import { ModalContext } from '../DefaultLayout';
 
 const cx = classNames.bind(styles);
 
@@ -17,10 +19,17 @@ function Header() {
     const [loading, setLoading] = useState(false);
     const debouncedValue = useDebounce(searchText, 500);
     const searchContainerRef = useRef(null);
+    const show = useContext(ModalContext);
 
     const handleInputClick = () => {
         if (searchContainerRef) {
             searchContainerRef.current.style.background = '#000000';
+        }
+    };
+
+    const handleInputBlur = () => {
+        if (searchContainerRef) {
+            searchContainerRef.current.style.background = '#ffffff1a';
         }
     };
 
@@ -62,7 +71,7 @@ function Header() {
                         placeholder="Tìm bài hát, nghệ sỹ, danh sách phát"
                         onChange={(e) => setSearchText(e.target.value)}
                         onClick={handleInputClick}
-                        // onBlur={() => alert('blur')}
+                        onBlur={handleInputBlur}
                     />
                     {searchText.trim() !== '' && (
                         <button
@@ -76,6 +85,7 @@ function Header() {
                 </div>
                 <div>
                     <button
+                        onClick={show}
                         className={`${cx(
                             'btn-login',
                         )} border text-white w-full p-3 rounded-sm`}

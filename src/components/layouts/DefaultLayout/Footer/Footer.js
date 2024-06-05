@@ -5,21 +5,27 @@ import {
     faBackwardStep,
     faCaretDown,
     faCaretUp,
+    faDownload,
     faEllipsisV,
     faForwardStep,
     faHeart,
     faPause,
     faPlay,
+    faPlusCircle,
     faRepeat,
+    faShare,
     faShuffle,
     faVolumeHigh,
+    faVolumeMute,
 } from '@fortawesome/free-solid-svg-icons';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useStore } from '~/store/hooks';
-import { pauseSong, playSong } from '~/store/actions';
+import { pauseSong, playSong, setPlaylist } from '~/store/actions';
 import { getPlaylistById, getSoundSongById } from '~/service';
-import { convertSecondsToMMSS, formatTime } from '~/utils';
+import { convertSecondsToMMSS, formatTime, shufflePlaylist } from '~/utils';
+import { faPlayCircle, faUser } from '@fortawesome/free-regular-svg-icons';
+import { MenuDetails } from '~/components/MenuDetails';
 
 const cx = classNames.bind(styles);
 
@@ -37,20 +43,20 @@ function Footer() {
     const [isRepeat, setIsRepeat] = useState(false);
     const [isShuffle, setIsShuffle] = useState(false);
     const [timeSong, setTimeSong] = useState();
+    const [visible, setVisible] = useState(false);
+    const [isMute, setIsMute] = useState(false);
     const [isPlayerOpened, setIsPlayerOpened] = useState(
         location.pathname.includes('/player'),
     );
 
+    const rangeRef = useRef(null);
+    const volumeRef = useRef(null);
+
+    const show = () => setVisible(true);
+    const hide = () => setVisible(false);
+
     const getIndexSongInPlaylist = (currentSong) => {
         return playlist?.findIndex((song) => {
-            console.log(
-                'song.encodeId',
-                song.encodeId,
-                'currentSong.encodeId',
-                currentSong.encodeId,
-                'RESULT: ',
-                song.encodeId === currentSong.encodeId,
-            );
             return song.encodeId === currentSong.encodeId;
         });
     };
@@ -90,6 +96,7 @@ function Footer() {
                 audio: currentAudio,
                 song: currentSong,
                 playListId: playListId,
+                playlist,
             }),
         );
         currentAudio.play();
@@ -115,13 +122,29 @@ function Footer() {
     };
 
     useEffect(() => {
+        if (rangeRef && timeSong) {
+            const valPercent =
+                (rangeRef.current.value / rangeRef.current.max) * 100;
+            rangeRef.current.style.background = `linear-gradient(to right, #67b9f9 ${valPercent}%, #515151 ${valPercent}%)`;
+        }
+    }, [timeSong]);
+
+    useEffect(() => {
+        if (volumeRef) {
+            const valPercent =
+                (volumeRef.current.value / volumeRef.current.max) * 100;
+            volumeRef.current.style.background = `linear-gradient(to right, #67b9f9 ${valPercent}%, #515151 ${valPercent}%)`;
+        }
+    }, [currentAudio.volume]);
+
+    useEffect(() => {
         if (currentSong) {
             currentAudio.volume = volume;
             currentAudio.addEventListener('timeupdate', () => {
                 setTimeSong(currentAudio.currentTime);
             });
         }
-    }, [currentSong]);
+    }, [currentSong, currentAudio]);
 
     useEffect(() => {
         setNavigationHistory((prevHistory) => [
@@ -131,7 +154,7 @@ function Footer() {
     }, [location]);
 
     useEffect(() => {
-        const handleAudioEnd = (e) => {
+        const handleAudioEnd = () => {
             if (isRepeat) {
                 currentAudio.play();
             } else {
@@ -140,8 +163,10 @@ function Footer() {
                     playlist[playlist.length - 1].encodeId
                 ) {
                     handlePause();
+                    console.log('pause');
                 } else {
                     handleNavigatorSong(NEXT);
+                    console.log('next');
                 }
             }
         };
@@ -157,21 +182,23 @@ function Footer() {
 
     useEffect(() => {
         // if (isShuffle) {
-        //     const songsTemp = [...playlist];
-        //     const playListShuffled = shufflePlaylist(songsTemp, currentSong);
-        //     setPlaylist();
-        //     dispatch(shuffle({playListShuffled}))
+        // }
+        const songsTemp = [...playlist];
+        const playListShuffled = shufflePlaylist(songsTemp, currentSong);
+        dispatch(setPlaylist(playListShuffled));
         // } else {
         //     dispatch(shuffle(playlist));
-        // }
     }, [isShuffle]);
 
     return (
-        <div onClick={handleOpenPlayer}>
+        <div
+            className="fixed bottom-0 left-0 right-0"
+            onClick={handleOpenPlayer}
+        >
             <div
                 className={`${cx(
                     'wrapper',
-                )} fixed bottom-0 left-0 right-0 flex items-center justify-between pr-6 pl-6`}
+                )} flex items-center justify-between pr-6 pl-6`}
             >
                 {/* Controls */}
                 <div className="flex items-center text-white">
@@ -207,7 +234,7 @@ function Footer() {
                         <FontAwesomeIcon icon={faForwardStep} />
                     </button>
                     <p className="ml-8 text-sm text--primary-color">
-                        <span>{formatTime(timeSong)} / </span>
+                        <span>{formatTime(timeSong) || '00:00'} / </span>
                         <span>
                             {convertSecondsToMMSS(currentSong.duration)}
                         </span>
@@ -235,20 +262,113 @@ function Footer() {
                     >
                         <FontAwesomeIcon icon={faHeart} />
                     </button>
-                    <button className="rounded-full w-10 h-10 text--primary-color text-xl lex justify-center items-center mr-3">
-                        <FontAwesomeIcon icon={faEllipsisV} />
-                    </button>
+                    <MenuDetails
+                        visible={visible}
+                        hide={hide}
+                        items={[
+                            {
+                                title: 'Bắt đầu phát nhạc',
+                                icon: faPlayCircle,
+                                handle: () => {},
+                            },
+                            {
+                                title: 'Thêm vào danh sách phát',
+                                icon: faPlusCircle,
+                                handle: () => {},
+                            },
+                            {
+                                title: 'Chuyển đến trang nghệ sĩ',
+                                icon: faUser,
+                                handle: () => {},
+                            },
+                            {
+                                title: 'Tải nhạc',
+                                icon: faDownload,
+                                handle: () => {},
+                            },
+                            {
+                                title: 'Chia sẻ',
+                                icon: faShare,
+                                handle: () => {},
+                            },
+                        ]}
+                    >
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                visible ? hide() : show();
+                            }}
+                            className="rounded-full w-10 h-10 text--primary-color text-xl lex justify-center items-center mr-3"
+                        >
+                            <FontAwesomeIcon icon={faEllipsisV} />
+                        </button>
+                    </MenuDetails>
                 </div>
                 {/* Details */}
                 <div className="flex items-center">
-                    <button className="rounded-full w-10 h-10 text--primary-color text-xl flex justify-center items-center mr-3">
-                        <FontAwesomeIcon icon={faVolumeHigh} />
+                    <div
+                        className={`${cx(
+                            'volume-container',
+                        )} flex items-center w-36`}
+                    >
+                        <input
+                            ref={volumeRef}
+                            className={`${cx('volume-progress')} flex-1`}
+                            type="range"
+                            min={0}
+                            max={100}
+                            value={currentAudio.volume * 100}
+                            onClick={(e) => e.stopPropagation()}
+                            onChange={(e) => {
+                                setVolume(e.target.value / 100);
+                                currentAudio.volume = e.target.value / 100;
+                            }}
+                        />
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                currentAudio.volume =
+                                    currentAudio.volume === 0 ? volume : 0;
+                                setIsMute(currentAudio.volume === 0);
+                            }}
+                            className="ml-2 rounded-full w-10 h-10 text--primary-color text-xl flex justify-center items-center mr-3 "
+                        >
+                            <FontAwesomeIcon
+                                icon={isMute ? faVolumeMute : faVolumeHigh}
+                            />
+                        </button>
+                    </div>
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setIsRepeat((prev) => !prev);
+                        }}
+                        className="rounded-full w-10 h-10 text--primary-color text-xl flex justify-center items-center mr-3"
+                    >
+                        <FontAwesomeIcon
+                            icon={faRepeat}
+                            className={`${cx(
+                                `${isRepeat ? 'is-repeat' : ''}`,
+                            )}`}
+                        />
                     </button>
-                    <button className="rounded-full w-10 h-10 text--primary-color text-xl flex justify-center items-center mr-3">
-                        <FontAwesomeIcon icon={faRepeat} />
-                    </button>
-                    <button className="rounded-full w-10 h-10 text--primary-color text-xl flex justify-center items-center mr-3">
-                        <FontAwesomeIcon icon={faShuffle} />
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setIsShuffle((prev) => !prev);
+                        }}
+                        className="rounded-full w-10 h-10 text--primary-color text-xl flex justify-center items-center mr-3"
+                    >
+                        <FontAwesomeIcon
+                            icon={faShuffle}
+                            className={`${cx(
+                                `${
+                                    isShuffle
+                                        ? 'is-shuffle'
+                                        : 'is-shuffle-reserver'
+                                }`,
+                            )}`}
+                        />
                     </button>
                     <button
                         className={`${cx(
@@ -262,6 +382,27 @@ function Footer() {
                         <FontAwesomeIcon icon={faCaretDown} />
                     </button>
                 </div>
+            </div>
+            <div className="progress absolute -top-0 z-40 w-full">
+                <input
+                    ref={rangeRef}
+                    className="w-full left-0"
+                    type="range"
+                    min={0}
+                    max={100}
+                    value={
+                        (timeSong / currentAudio?.duration) * 100
+                            ? (timeSong / currentAudio?.duration) * 100
+                            : 0
+                    }
+                    onClick={(e) => {
+                        e.stopPropagation();
+                    }}
+                    onChange={(e) => {
+                        currentAudio.currentTime =
+                            (currentAudio?.duration * e.target.value) / 100;
+                    }}
+                />
             </div>
         </div>
     );

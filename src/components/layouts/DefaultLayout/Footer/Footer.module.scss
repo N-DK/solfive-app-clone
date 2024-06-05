@@ -4,14 +4,44 @@
 
     button {
         border: none;
-        transition: .3s ease-in-out;
+        transition: 0.3s ease-in-out;
         &:hover {
             background-color: #ffffff1a;
         }
     }
 }
 
+.volume-progress {
+    transition: 0.3s;
+    opacity: 0;
+    transform: translateX(30px);
+    width: 0;
+}
+
+.volume-container {
+    &:hover {
+        .volume-progress {
+            opacity: 1;
+            transform: translate(0);
+        }
+    }
+}
+
 .isPlayerOpened {
-    transition: all .3s ease-in-out;
+    transition: all 0.3s ease-in-out;
     transform: rotate(180deg);
+}
+
+.is-repeat {
+    color: #67b9f9;
+}
+
+.is-shuffle {
+    transition: all ease-in-out 0.3s;
+    transform: rotateX(180deg);
+}
+
+.is-shuffle-reserver {
+    transition: all ease-in-out 0.3s;
+    transform: rotateX(-180deg);
 }

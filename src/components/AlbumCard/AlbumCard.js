@@ -26,7 +26,10 @@ function AlbumCard({ data }) {
                 >
                     {data?.artists?.map((artist, index) => (
                         <Link key={index} to={`/artist?id=${artist.alias}`}>
-                            {artist.name},{' '}
+                            {artist.name ===
+                            data.artists[data.artists.length - 1].name
+                                ? artist.name
+                                : `${artist.name}, `}
                         </Link>
                     ))}
                 </p>

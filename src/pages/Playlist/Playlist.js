@@ -3,13 +3,19 @@ import styles from './Playlist.module.scss';
 import classNames from 'classnames/bind';
 import {
     faEllipsisVertical,
+    faShare,
     faShuffle,
 } from '@fortawesome/free-solid-svg-icons';
 import { SongItem } from '~/components/SongItem';
 import { useQuery } from '~/hooks';
 import { useEffect, useState } from 'react';
-import { getPlaylistById } from '~/service';
+import { getPlaylistById, getSoundSongById } from '~/service';
 import { convertSeconds } from '~/utils';
+import HeadlessTippy from '@tippyjs/react/headless';
+import { MenuDetails } from '~/components/MenuDetails';
+import { useStore } from '~/store/hooks';
+import { playSong } from '~/store/actions';
+import { useNavigate } from 'react-router-dom';
 
 const cx = classNames.bind(styles);
 
@@ -18,6 +24,46 @@ function Playlist() {
     let id = query.get('id');
 
     const [data, setData] = useState([]);
+    const [visible, setVisible] = useState(false);
+    const navigator = useNavigate();
+    const [state, dispatch] = useStore();
+    const { currentAudio, currentSong } = state;
+
+    const show = () => setVisible(true);
+    const hide = () => setVisible(false);
+
+    const handlePlayRandom = () => {
+        const fetch = async () => {
+            // setLoading(true);
+            const playlist = await getPlaylistById(id);
+            const songs = playlist?.data?.song?.items;
+            const data = songs[Math.floor(Math.random() * songs.length)];
+            const res = await getSoundSongById(data.encodeId);
+            const URL = res.data['128'];
+
+            var audio = new Audio(URL);
+
+            if (currentAudio) {
+                if (data.encodeId === currentSong.encodeId) {
+                    audio = currentAudio;
+                } else {
+                    currentAudio.pause();
+                }
+            }
+            dispatch(
+                playSong({
+                    audio,
+                    song: data,
+                    playListId: id,
+                    playlist: songs,
+                }),
+            );
+            audio.play();
+            navigator(`/player?id=${data.encodeId}&listId=${id}`);
+            // setLoading(false);
+        };
+        fetch();
+    };
 
     useEffect(() => {
         const fetch = async () => {
@@ -54,6 +100,7 @@ function Playlist() {
                             </div>
                             <div className={`flex items-center mt-3 z-40`}>
                                 <button
+                                    onClick={handlePlayRandom}
                                     className={` bg-white rounded-full p-3 pt-2 pb-2 flex items-center mr-4`}
                                 >
                                     <FontAwesomeIcon
@@ -64,15 +111,28 @@ function Playlist() {
                                         Phát ngẫu nhiên
                                     </span>
                                 </button>
-                                <button
-                                    className={`${cx(
-                                        'btn_more',
-                                    )} text-white flex items-center w-10 h-10 rounded-full justify-center`}
+                                <MenuDetails
+                                    hide={hide}
+                                    visible={visible}
+                                    items={[
+                                        {
+                                            title: 'Chia sẻ',
+                                            icon: faShare,
+                                            handle: () => {},
+                                        },
+                                    ]}
                                 >
-                                    <FontAwesomeIcon
-                                        icon={faEllipsisVertical}
-                                    />
-                                </button>
+                                    <button
+                                        onClick={visible ? hide : show}
+                                        className={`${cx(
+                                            'btn_more',
+                                        )} text-white flex items-center w-10 h-10 rounded-full justify-center`}
+                                    >
+                                        <FontAwesomeIcon
+                                            icon={faEllipsisVertical}
+                                        />
+                                    </button>
+                                </MenuDetails>
                             </div>
                         </div>
                     </div>

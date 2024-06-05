@@ -1,4 +1,4 @@
-import { PAUSE_SONG, PLAY_SONG } from './constants';
+import { PAUSE_SONG, PLAY_SONG, SET_PLAYLIST } from './constants';
 
 const initState = {
     playlist: [],
@@ -25,6 +25,12 @@ function reducer(state, action) {
                 ...state,
                 currentAudio: action.payload,
                 isPlaying: false,
+            };
+        }
+        case SET_PLAYLIST: {
+            return {
+                ...state,
+                playlist: action.payload,
             };
         }
     }

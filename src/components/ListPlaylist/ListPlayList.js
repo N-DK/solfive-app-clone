@@ -46,11 +46,6 @@ function ListPlaylist({ title, data, settings = _settings_ }) {
                 </div>
             </div>
             <div>
-                {/* <div className={`flex items-center`}>
-                    {data?.map((item, index) => (
-                        <AlbumCard key={index} data={item} />
-                    ))}
-                </div> */}
                 <Slider ref={slider} {...settings}>
                     {data?.map((item, index) => (
                         <AlbumCard key={index} data={item} />

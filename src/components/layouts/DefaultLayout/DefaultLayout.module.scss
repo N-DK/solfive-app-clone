@@ -6,3 +6,15 @@
         transition: all ease-in-out 0.2s;
     }
 }
+
+.modal-content {
+    border-bottom: 1px solid #4d4d4d;
+    border-top: 1px solid #4d4d4d;
+
+    .close-modal {
+        transition: all ease-in-out 0.2s;
+        &:hover {
+            background-color: #ffffff1a;
+        }
+    }
+}

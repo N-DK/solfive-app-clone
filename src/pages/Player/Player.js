@@ -8,6 +8,7 @@ import {
     getLyricSongById,
     getPlaylistById,
     getSongById,
+    getSoundSongById,
 } from '~/service';
 import { ListPlaylist } from '~/components/ListPlaylist';
 import { ListArtist } from '~/components/ListArtist';
@@ -19,10 +20,19 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import Slider from 'react-slick';
 import { useStore } from '~/store/hooks';
 import { chunkArray, getSectionBySectionId } from '~/utils';
+import { pauseSong, playSong } from '~/store/actions';
 
 const cx = classNames.bind(styles);
 
-function NextInPlayList({ data }) {
+function NextInPlayList({ data, songs }) {
+    const [state, dispatch] = useStore();
+    const { currentSong, playlist } = state;
+    const getIndexSongInPlaylist = (currentSong) => {
+        return playlist?.findIndex((song) => {
+            return song.encodeId === currentSong.encodeId;
+        });
+    };
+
     return (
         <div>
             <div
@@ -30,11 +40,14 @@ function NextInPlayList({ data }) {
                     'playlist_name',
                 )} flex items-center justify-between text--primary-color p-3 text-sm`}
             >
-                <p>25/{data?.song?.total}</p>
+                <p>
+                    {getIndexSongInPlaylist(currentSong) + 1}/
+                    {data?.song?.total}
+                </p>
                 <p>Playlist ‧ {data?.title}</p>
             </div>
             <div className={`${cx('list-results')}`}>
-                {data?.song?.items?.map((item, index) => (
+                {songs?.map((item, index) => (
                     <SongItem key={index} size="medium" data={item} />
                 ))}
             </div>
@@ -53,12 +66,6 @@ const Lyric = ({ data }) => {
                         ))}
                     </p>
                 ))}
-                {/* <p>I wanna be with you</p>
-                <p>And I wanna stay with you</p>
-                <p>Just like the stars shining bright</p>
-                <p>You're glowing once more</p>
-                <p>Right here beside you, I'm still</p>
-                <p>Walking wherever you go</p> */}
             </div>
         </div>
     );
@@ -185,13 +192,54 @@ function Player() {
     const [song, setSong] = useState();
     const [state, dispatch] = useStore();
 
-    const { currentSong } = state;
+    const { currentSong, playlist, currentAudio, isPlaying } = state;
     const tabFirst = useRef(null);
     const line = useRef(null);
 
     const query = useQuery();
     const id = query.get('id');
     const listId = query.get('listId');
+
+    useState(() => {
+        const fetch = async () => {
+            // setLoading(true);
+            const songRes = await getSongById(id);
+            const res = await getSoundSongById(id);
+            const playlist = await getPlaylistById(listId);
+            const song = songRes.data;
+            const songs = playlist?.data?.song?.items;
+            const URL = res.data['128'];
+
+            var audio = new Audio(URL);
+
+            if (currentAudio) {
+                if (id === currentSong.encodeId) {
+                    audio = currentAudio;
+                } else {
+                    currentAudio.pause();
+                }
+            }
+            dispatch(
+                playSong({
+                    audio,
+                    song,
+                    playListId: listId,
+                    playlist: songs,
+                }),
+            );
+            dispatch(pauseSong(audio));
+            // audio.play();
+            // setLoading(false);
+        };
+        fetch();
+    }, []);
+
+    // useEffect(() => {
+    //     if (currentAudio && !isPlaying) {
+    //         // currentAudio.play();
+    //         setDataSongInNextPlaylist(playlist);
+    //     }
+    // }, [state]);
 
     useEffect(() => {
         const fetch = async () => {
@@ -302,9 +350,16 @@ function Player() {
                     </div>
                     <div>
                         {component === 0 && (
-                            <NextInPlayList data={dataSongNextInPlayList} />
+                            <NextInPlayList
+                                data={dataSongNextInPlayList}
+                                songs={
+                                    playlist?.length === 0 || !playlist
+                                        ? dataSongNextInPlayList?.song?.items
+                                        : playlist
+                                }
+                            />
                         )}
-                        {component == 1 && <Lyric data={dataLyric} />}
+                        {component === 1 && <Lyric data={dataLyric} />}
                         {component === 2 && (
                             <Relate
                                 artist={dataArtist}
