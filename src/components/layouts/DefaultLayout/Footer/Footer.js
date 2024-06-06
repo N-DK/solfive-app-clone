@@ -74,7 +74,9 @@ function Footer() {
                 const song = playlist[index + type];
                 if (window.location.pathname.includes('/player')) {
                     navigate(
-                        `/player?id=${song?.encodeId}&listId=${playListId}`,
+                        `/player?id=${song?.encodeId}&listId=${
+                            playListId ?? song?.album?.encodeId
+                        }`,
                     );
                 }
                 const res = await getSoundSongById(song?.encodeId);
@@ -143,7 +145,13 @@ function Footer() {
                     location.pathname + location.search,
                 ]);
             }
-            navigate(`/player?id=${currentSong.encodeId}&listId=${playListId}`);
+            if (playListId) {
+                navigate(
+                    `/player?id=${currentSong.encodeId}&listId=${playListId}`,
+                );
+            } else {
+                navigate(`/player?id=${currentSong.encodeId}`);
+            }
             setOpenPlayer(true);
         } else {
             setOpenPlayer(false);
@@ -175,6 +183,10 @@ function Footer() {
             volumeRef.current.style.background = `linear-gradient(to right, #67b9f9 ${valPercent}%, #515151 ${valPercent}%)`;
         }
     }, [currentAudio.volume]);
+
+    useEffect(() => {
+        setIsMute(volume === 0);
+    }, [volume]);
 
     useEffect(() => {
         if (currentSong) {
@@ -219,7 +231,7 @@ function Footer() {
 
     return (
         <div
-            className="fixed bottom-0 left-0 right-0"
+            className="fixed bottom-0 left-0 right-0 z-1000"
             onClick={handleOpenPlayer}
         >
             <div
@@ -380,7 +392,11 @@ function Footer() {
                             onClick={(e) => {
                                 e.stopPropagation();
                                 currentAudio.volume =
-                                    currentAudio.volume === 0 ? volume : 0;
+                                    currentAudio.volume === 0
+                                        ? volume === 0
+                                            ? 0.7
+                                            : volume
+                                        : 0;
                                 setIsMute(currentAudio.volume === 0);
                             }}
                             className="ml-2 rounded-full w-10 h-10 text--primary-color text-xl flex justify-center items-center mr-3 "

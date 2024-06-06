@@ -18,3 +18,25 @@
         }
     }
 }
+
+.lyric_container {
+    animation: in ease-in-out 0.3s;
+}
+
+.btn_hover {
+    &:hover {
+        background-color: #ffffff1a;
+    }
+}
+
+@keyframes in {
+    0% {
+        opacity: 0;
+        transform: translateY(100px);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

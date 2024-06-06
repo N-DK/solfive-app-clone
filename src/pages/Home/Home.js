@@ -18,7 +18,7 @@ function Home() {
             setProgress(40);
             setProgress(70);
             const res = await getHome();
-            setData(res.data.data);
+            setData(res?.data?.data);
             setProgress(100);
         };
 

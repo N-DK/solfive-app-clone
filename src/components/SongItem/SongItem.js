@@ -47,7 +47,7 @@ function SongItem({ data, size = 'large', playListId }) {
             if (window.location.pathname.includes('/player')) {
                 navigator(
                     `/player?id=${data.encodeId}&listId=${
-                        playListId ?? listId
+                        playListId ?? listId ?? data?.album?.encodeId
                     }`,
                 );
             }

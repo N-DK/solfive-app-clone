@@ -5,13 +5,36 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faHome } from '@fortawesome/free-solid-svg-icons';
 import { useContext, useEffect, useState } from 'react';
 import { DefaultContext } from '../DefaultLayout';
+import {
+    ExploreIcon,
+    HomeIcon,
+    LibraryIcon,
+    HomeIconActive,
+    ExploreIconActive,
+    LibraryIconActive,
+} from '~/icon';
 
 const cx = classNames.bind(styles);
 
 const paths = [
-    { path: '/', pageName: 'Trang chủ', icon: faHome },
-    { path: '/explore', pageName: 'Khám phá', icon: faHome },
-    { path: '/library', pageName: 'Thư viện', icon: faHome },
+    {
+        path: '/',
+        pageName: 'Trang chủ',
+        icon: <HomeIcon />,
+        iconActive: <HomeIconActive />,
+    },
+    {
+        path: '/explore',
+        pageName: 'Khám phá',
+        icon: <ExploreIcon />,
+        iconActive: <ExploreIconActive />,
+    },
+    {
+        path: '/library',
+        pageName: 'Thư viện',
+        icon: <LibraryIcon />,
+        iconActive: <LibraryIconActive />,
+    },
 ];
 
 function Sidebar({ sidebarState }) {
@@ -25,13 +48,13 @@ function Sidebar({ sidebarState }) {
         <div
             className={`${cx(
                 'wrapper',
-            )} bg-black top-0 bottom-0 p-2 fixed left-0 ${
+            )} bg-black top-0 bottom-0 p-2 fixed left-0 z-50 ${
                 !sidebarState
                     ? 'border-transparent bg-transparent w-20'
                     : `${cx('border-r')} w-60`
             }`}
         >
-            <div className={`${cx('container')} pt-14`}>
+            <div className={`${cx('container')} pt-20`}>
                 <div className={` pb-8 mb-4`}>
                     <ul>
                         {paths.map((route, index) => (
@@ -43,14 +66,18 @@ function Sidebar({ sidebarState }) {
                                 )} text-white mb-1 font-semibold`}
                             >
                                 <Link
-                                    className={`${cx('')} text-white ${
+                                    className={`${cx(
+                                        '',
+                                    )} text-white flex items-center ${
                                         sidebarState
                                             ? 'p-5 pt-3.5 pb-3.5'
                                             : 'flex flex-col justify-center items-center pt-3 pb-3'
                                     } rounded mb-1 block`}
                                     to={route.path}
                                 >
-                                    <FontAwesomeIcon icon={route.icon} />
+                                    {path === route.path
+                                        ? route.iconActive
+                                        : route.icon}
                                     <span
                                         className={`${
                                             !sidebarState

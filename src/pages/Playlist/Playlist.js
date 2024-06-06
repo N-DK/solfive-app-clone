@@ -82,7 +82,7 @@ function Playlist() {
 
     return (
         <div className={`${cx('wrapper')} mt-14`}>
-            <div className={`${cx('container')}`}>
+            <div className={`${cx('container')} relative z-100`}>
                 <div className="flex ">
                     <div className={` w-64 h-64 rounded overflow-hidden mr-8`}>
                         <img className="w-full h-full" src={data?.thumbnailM} />
@@ -149,6 +149,14 @@ function Playlist() {
                     ))}
                 </div>
             </div>
+            <div
+                className="absolute h-80 top-0 left-0 bg-no-repeat bg-cover right-0"
+                style={{
+                    backgroundImage: `url(${data?.thumbnailM})`,
+                    boxShadow: 'rgb(33, 33, 33) 0px 0px 30px 15px inset',
+                }}
+            ></div>
+            <div className="absolute h-80 top-0 left-0 right-0 bg-gradient-to-b from-from-body-bg-gradiant to-to-body-bg-gradiant"></div>
         </div>
     );
 }

@@ -39,3 +39,20 @@
     border: none;
 }
 
+.header_scroll {
+    transition: all 0.3s ease-in-out;
+    animation: in ease-in-out 0.3s;
+    border-bottom: 1px solid #262626;
+}
+
+@keyframes in {
+    0% {
+        opacity: 0;
+        transform: translateY(-100%);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translate(0);
+    }
+}

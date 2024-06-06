@@ -21,17 +21,17 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import Slider from 'react-slick';
 import { useStore } from '~/store/hooks';
 import { chunkArray, getSectionBySectionId } from '~/utils';
-import { pauseSong, playSong } from '~/store/actions';
+import { pauseSong, playSong, setPlaylist } from '~/store/actions';
 import { DefaultContext } from '~/components/layouts/DefaultLayout/DefaultLayout';
 
 const cx = classNames.bind(styles);
 
 function NextInPlayList({ data, songs }) {
     const [state, dispatch] = useStore();
-    const { currentSong, playlist } = state;
+    const { currentSong } = state;
     const getIndexSongInPlaylist = (currentSong) => {
-        return playlist?.findIndex((song) => {
-            return song.encodeId === currentSong.encodeId;
+        return songs?.findIndex((song) => {
+            return song?.encodeId === currentSong?.encodeId;
         });
     };
 
@@ -89,6 +89,7 @@ const Lyric = ({ data }) => {
                                 timeSong * 1000 <=
                                     sentence?.words[sentence?.words?.length - 1]
                                         ?.endTime;
+
                             return (
                                 <p
                                     ref={active ? lyricActiveRef : null}
@@ -275,19 +276,24 @@ function Player() {
     }, []);
 
     useEffect(() => {
+        if (!openPlayer) setOpenPlayer(true);
+    }, []);
+
+    useEffect(() => {
         const fetch = async () => {
             setLoading(true);
-            const res = await getPlaylistById(listId);
-            setDataSongInNextPlaylist(res.data);
+            const res = await getPlaylistById(listId ?? song?.album?.encodeId);
+            dispatch(setPlaylist(res?.data?.song?.items));
+            setDataSongInNextPlaylist(res?.data);
             setLoading(false);
         };
         fetch();
-    }, [listId]);
+    }, [listId, song]);
 
     useEffect(() => {
         const fetch = async () => {
             const res = await getLyricSongById(id);
-            setDataLyric(res.data);
+            setDataLyric(res?.data);
         };
 
         fetch();
@@ -296,7 +302,7 @@ function Player() {
     useEffect(() => {
         const fetch = async () => {
             const res = await getSongById(id);
-            setSong(res.data);
+            setSong(res?.data);
         };
         fetch();
     }, [id]);
@@ -311,8 +317,8 @@ function Player() {
                 const playlistResults = await getPlaylistById(
                     artist.playlistId,
                 );
-                setDataPlaylistArtist(playlistResults.data);
-                setDataArtist(artistResult.data);
+                setDataPlaylistArtist(playlistResults?.data);
+                setDataArtist(artistResult?.data);
                 setLoading(false);
             };
 
@@ -391,7 +397,7 @@ function Player() {
                     <div className="w-full">
                         {component === 0 &&
                             (loading ? (
-                                <div>
+                                <div className="text-white flex justify-center text-3xl mt-10">
                                     <FontAwesomeIcon
                                         icon={faSpinner}
                                         className="loading"

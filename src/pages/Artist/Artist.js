@@ -35,8 +35,7 @@ function Artist() {
             setProgress(40);
             setProgress(70);
             const res = await getArtistById(id);
-            console.log(res.data);
-            setData(res.data);
+            setData(res?.data);
             setProgress(100);
         };
 
@@ -97,6 +96,15 @@ function Artist() {
                     data={getSectionBySectionId(data, 'aSingle')?.items}
                 />
             </div>
+            <div
+                style={{
+                    backgroundImage: `url(${data?.thumbnailM})`,
+                    backgroundRepeat: 'no-repeat',
+                    backgroundSize: 'cover',
+                }}
+                className="fixed flex justify-center -z-30 top-0 bottom-0  left-0  right-0"
+            ></div>
+            <div className="fixed -z-10 top-0 bottom-0 left-0 right-0  bg-gradient-to-b from-from-body-bg-gradiant to-to-body-bg-gradiant"></div>
         </div>
     );
 }
