@@ -17,10 +17,10 @@ import {
     faUser,
 } from '@fortawesome/free-regular-svg-icons';
 import { useStore } from '~/store/hooks';
-import { getPlaylistById, getSoundSongById } from '~/service';
-import { useContext, useState } from 'react';
+import { getPlaylistById, getSoundSongById, dropHeart } from '~/service';
+import { useContext, useEffect, useState } from 'react';
 import { pauseSong, playSong } from '~/store/actions';
-import { convertSecondsToMMSS } from '~/utils';
+import { convertSecondsToMMSS, isExistFavoriteSongs } from '~/utils';
 import { useQuery } from '~/hooks';
 import { MenuDetails } from '../MenuDetails';
 import axios from 'axios';
@@ -28,7 +28,7 @@ import { saveAs } from 'file-saver';
 import { DefaultContext } from '../layouts/DefaultLayout/DefaultLayout';
 const cx = classNames.bind(styles);
 
-function SongItem({ data, size = 'large', playListId }) {
+function SongItem({ data, size = 'large', playListId, liked }) {
     const isLarge = size === 'large';
     const navigator = useNavigate();
     const [state, dispatch] = useStore();
@@ -36,7 +36,9 @@ function SongItem({ data, size = 'large', playListId }) {
     const [visible, setVisible] = useState(false);
     const query = useQuery();
     const listId = query.get('listId');
-    const { openModal, loading, setLoading } = useContext(DefaultContext);
+    const { openModal, loading, setLoading, dataUser } =
+        useContext(DefaultContext);
+    const [like, setLike] = useState(liked);
 
     const show = () => setVisible(true);
     const hide = () => setVisible(false);
@@ -94,6 +96,26 @@ function SongItem({ data, size = 'large', playListId }) {
         if (isPlaying) {
             currentAudio.pause();
         }
+    };
+
+    const getFavoriteSongById = (data) => {
+        const item = dataUser.favoriteList.song.items.find(
+            (song) => song.encodeId === data?.encodeId,
+        );
+        item.artists = data?.artists?.map((artist) => ({ name: artist.name }));
+        item.is_liked = 0;
+        return item;
+    };
+
+    const handleLike = () => {
+        const payload = like ? getFavoriteSongById(data) : data;
+        const fetch = async () => {
+            const res = await dropHeart(payload);
+            console.log(res);
+        };
+
+        setLike(!like);
+        fetch();
     };
 
     const handleDownload = (title) => {
@@ -232,13 +254,13 @@ function SongItem({ data, size = 'large', playListId }) {
                             }`}
                         >
                             <button
-                                onClick={openModal}
+                                onClick={dataUser ? handleLike : openModal}
                                 className={`${cx(
                                     'btn',
+                                    'heart',
+                                    `${like && 'active'}`,
                                 )} flex items-center justify-center text-white text-xl w-10 h-10 text--primary-color rounded-full mr-2`}
-                            >
-                                <FontAwesomeIcon icon={faHeart} />
-                            </button>
+                            ></button>
                             <MenuDetails
                                 visible={visible}
                                 hide={hide}

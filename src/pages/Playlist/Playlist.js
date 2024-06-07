@@ -10,7 +10,7 @@ import { SongItem } from '~/components/SongItem';
 import { useQuery } from '~/hooks';
 import { useContext, useEffect, useState } from 'react';
 import { getPlaylistById, getSoundSongById } from '~/service';
-import { convertSeconds } from '~/utils';
+import { convertSeconds, isExistFavoriteSongs } from '~/utils';
 import HeadlessTippy from '@tippyjs/react/headless';
 import { MenuDetails } from '~/components/MenuDetails';
 import { useStore } from '~/store/hooks';
@@ -26,10 +26,11 @@ function Playlist() {
 
     const [data, setData] = useState([]);
     const [visible, setVisible] = useState(false);
+    const [initId, setInitId] = useState(id);
     const navigator = useNavigate();
     const [state, dispatch] = useStore();
     const { currentAudio, currentSong } = state;
-    const { setLoading, setProgress } = useContext(DefaultContext);
+    const { setLoading, setProgress, dataUser } = useContext(DefaultContext);
 
     const show = () => setVisible(true);
     const hide = () => setVisible(false);
@@ -68,6 +69,10 @@ function Playlist() {
     };
 
     useEffect(() => {
+        if (id === 'favorite') setInitId(id);
+    }, [id]);
+
+    useEffect(() => {
         const fetch = async () => {
             setProgress(10);
             setProgress(40);
@@ -78,7 +83,7 @@ function Playlist() {
         };
 
         fetch();
-    }, []);
+    }, [id]);
 
     return (
         <div className={`${cx('wrapper')} mt-14`}>
@@ -145,7 +150,12 @@ function Playlist() {
                 </div>
                 <div className="mt-14">
                     {data?.song?.items.map((item, index) => (
-                        <SongItem key={index} data={item} playListId={id} />
+                        <SongItem
+                            key={`${item.name}-${index}-${id}`}
+                            data={item}
+                            playListId={id}
+                            liked={isExistFavoriteSongs(dataUser, item)}
+                        />
                     ))}
                 </div>
             </div>

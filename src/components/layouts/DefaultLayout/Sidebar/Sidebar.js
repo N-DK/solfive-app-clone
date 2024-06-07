@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import styles from './Sidebar.module.scss';
 import classNames from 'classnames/bind';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faHome } from '@fortawesome/free-solid-svg-icons';
+import { faHome, faThumbTack } from '@fortawesome/free-solid-svg-icons';
 import { useContext, useEffect, useState } from 'react';
 import { DefaultContext } from '../DefaultLayout';
 import {
@@ -39,7 +39,7 @@ const paths = [
 
 function Sidebar({ sidebarState }) {
     const [path, setPath] = useState(window.location.pathname);
-    const value = useContext(DefaultContext);
+    const { openModal, dataUser } = useContext(DefaultContext);
     useEffect(() => {
         setPath(window.location.pathname);
     }, [window.location.pathname]);
@@ -93,23 +93,48 @@ function Sidebar({ sidebarState }) {
                     </ul>
                 </div>
                 {sidebarState && (
-                    <div className={`${cx('border-t')} p-4 pt-8`}>
-                        <button
-                            onClick={value.openModal}
-                            className={`${cx(
-                                'btn-login',
-                            )} border text-white w-full p-2.5 rounded-sm`}
-                        >
-                            Đăng nhập
-                        </button>
-                        <p
-                            className={`${cx(
-                                '',
-                            )} py-3 text-xs text--primary-color`}
-                        >
-                            Đăng nhập để tạo và chia sẻ danh sách phát, nhận các
-                            đề xuất được cá nhân hóa, v.v.
-                        </p>
+                    <div>
+                        <div className={`${cx('border-t')} p-4 pt-8`}>
+                            {!dataUser && (
+                                <>
+                                    <button
+                                        onClick={openModal}
+                                        className={`${cx(
+                                            'btn-login',
+                                        )} border text-white w-full p-2.5 rounded-sm`}
+                                    >
+                                        Đăng nhập
+                                    </button>
+                                    <p
+                                        className={`${cx(
+                                            '',
+                                        )} py-3 text-xs text--primary-color`}
+                                    >
+                                        Đăng nhập để tạo và chia sẻ danh sách
+                                        phát, nhận các đề xuất được cá nhân hóa,
+                                        v.v.
+                                    </p>
+                                </>
+                            )}
+                        </div>
+                        {dataUser && (
+                            <Link
+                                to={'/playlist?id=favorite'}
+                                className={`${cx(
+                                    '',
+                                )} rounded overflow-hidden text-white flex items-center bg-primary pt-3 pb-3 p-2 justify-between -mt-4`}
+                            >
+                                <p className="flex flex-col">
+                                    <span className="text-sm font-semibold pb-1">
+                                        Danh sách bạn yêu thích
+                                    </span>
+                                    <span className="text-xs">
+                                        Danh sách tự động
+                                    </span>
+                                </p>
+                                <FontAwesomeIcon icon={faThumbTack} />
+                            </Link>
+                        )}
                     </div>
                 )}
             </div>

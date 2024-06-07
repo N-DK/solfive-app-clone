@@ -19,7 +19,9 @@ function Modal({ open, onClose, children }) {
             ${open ? 'scale-100 opacity-100' : 'scale-125 opacity-0'}
           `}
             >
-                <p className="text-lg font-semibold text-white p-2 pl-4">Đăng nhập</p>
+                <p className="text-lg font-semibold text-white p-2 pl-4">
+                    Đăng nhập
+                </p>
                 {children}
             </div>
         </div>

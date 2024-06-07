@@ -25,7 +25,8 @@ function Header() {
     const [showHeader, setShowHeader] = useState(false);
     const debouncedValue = useDebounce(searchText, 500);
     const searchContainerRef = useRef(null);
-    const value = useContext(DefaultContext);
+    const { openPlayer, dataUser, openModal, sidebarState } =
+        useContext(DefaultContext);
     const [state, dispatch] = useStore();
     const { currentSong, currentAudio } = state;
 
@@ -77,7 +78,7 @@ function Header() {
 
     useEffect(() => {
         const handleScroll = () => {
-            setShowHeader(window.scrollY >= 10);
+            setShowHeader(window.scrollY >= 200);
         };
 
         window.addEventListener('scroll', handleScroll);
@@ -107,7 +108,7 @@ function Header() {
 
     return (
         <div className={`${cx('wrapper')} w-full z-1000 relative`}>
-            {!showHeader && !value.openPlayer && (
+            {!showHeader && !openPlayer && (
                 <div
                     className={`${cx(
                         'container',
@@ -280,21 +281,27 @@ function Header() {
                         )}
                     </div>
                     <div>
-                        <button
-                            onClick={value.openModal}
-                            className={`${cx(
-                                'btn-login',
-                            )} border text-white w-full p-3 rounded-sm`}
-                        >
-                            Đăng nhập
-                        </button>
+                        {dataUser ? (
+                            <div className="w-11 h-11 rounded-full overflow-hidden">
+                                <img src={dataUser?.user?.picture} />
+                            </div>
+                        ) : (
+                            <button
+                                onClick={openModal}
+                                className={`${cx(
+                                    'btn-login',
+                                )} border text-white w-full p-3 rounded-sm`}
+                            >
+                                Đăng nhập
+                            </button>
+                        )}
                     </div>
                 </div>
             )}
-            {(showHeader || value.openPlayer) && (
+            {(showHeader || openPlayer) && (
                 <div
                     className={`${cx('header_scroll')} ${
-                        !value.sidebarState ? 'pl-68 pr-20' : 'pl-108 pr-48'
+                        !sidebarState ? 'pl-68 pr-20' : 'pl-108 pr-48'
                     } bg-black fixed top-0 left-0 right-0 pt-3 pb-3 z-1000 `}
                 >
                     <div className={``}>
@@ -494,14 +501,20 @@ function Header() {
                                 )}
                             </div>
                             <div>
-                                <button
-                                    onClick={value.openModal}
-                                    className={`${cx(
-                                        'btn-login',
-                                    )} border text-white w-full p-3 rounded-sm`}
-                                >
-                                    Đăng nhập
-                                </button>
+                                {dataUser ? (
+                                    <div className="w-11 h-11 rounded-full overflow-hidden">
+                                        <img src={dataUser?.user?.picture} />
+                                    </div>
+                                ) : (
+                                    <button
+                                        onClick={openModal}
+                                        className={`${cx(
+                                            'btn-login',
+                                        )} border text-white w-full p-3 rounded-sm`}
+                                    >
+                                        Đăng nhập
+                                    </button>
+                                )}
                             </div>
                         </div>
                     </div>

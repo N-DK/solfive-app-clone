@@ -49,4 +49,12 @@ export const getSectionBySectionId = (artist, sectionId) => {
     return artist?.sections?.find((section) => section.sectionId === sectionId);
 };
 
+export const isExistFavoriteSongs = (dataUser, songCheck) => {
+    return (
+        dataUser?.favoriteList?.song?.items?.findIndex(
+            (song) => song?.encodeId === songCheck?.encodeId,
+        ) >= 0
+    );
+};
+
 export { default as request } from './request';

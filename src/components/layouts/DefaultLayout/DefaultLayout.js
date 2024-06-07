@@ -9,10 +9,12 @@ import { faBars, faCaretRight } from '@fortawesome/free-solid-svg-icons';
 import { createContext, useContext, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Modal } from '~/components/Modal';
-import { getLyricSongById } from '~/service';
+import { getLyricSongById, login } from '~/service';
 import { Player } from '~/pages/Player';
 import { HistoryContext } from '~/components/HistoryProvider';
-
+import { GoogleLogin } from '@react-oauth/google';
+import { jwtDecode } from 'jwt-decode';
+import { getUser } from '~/service/userService';
 const cx = classNames.bind(styles);
 
 export const DefaultContext = createContext();
@@ -28,6 +30,16 @@ function DefaultLayout({ children, setProgress }) {
     const [loading, setLoading] = useState(false);
     const [openPlayer, setOpenPlayer] = useState(false);
     const { previousPath } = useContext(HistoryContext);
+    const [dataUser, setDateUser] = useState();
+    const [token, setToken] = useState();
+    useEffect(() => {
+        const fetch = async () => {
+            const res = await getUser();
+            setDateUser(res.data);
+        };
+
+        fetch();
+    }, [token, window.location.pathname + window.location.search]);
 
     const show = () => setOpen(true);
 
@@ -104,6 +116,7 @@ function DefaultLayout({ children, setProgress }) {
                 sidebarState,
                 setLyricLine,
                 lyricLine,
+                dataUser,
             }}
         >
             <div className={`${cx('wrapper')} flex min-h-screen`}>
@@ -171,7 +184,7 @@ function DefaultLayout({ children, setProgress }) {
                 <Modal open={open} onClose={() => setOpen(false)}>
                     <div className={`${cx('modal-content')}`}>
                         <div className="p-3 pr-32 pl-4">
-                            <button
+                            {/* <button
                                 className={`${cx(
                                     '',
                                 )} rounded bg-white flex items-center p-2`}
@@ -210,7 +223,27 @@ function DefaultLayout({ children, setProgress }) {
                                 <span className="font-semibold text-sm ml-3">
                                     Đăng nhập bằng Google
                                 </span>
-                            </button>
+                            </button> */}
+                            <GoogleLogin
+                                onSuccess={(credentialResponse) => {
+                                    const fetch = async () => {
+                                        const res = await login(
+                                            credentialResponse,
+                                        );
+                                        localStorage.setItem(
+                                            'token',
+                                            `${res.data.token}`,
+                                        );
+                                        setToken(res.data.token);
+                                        setOpen(false);
+                                    };
+
+                                    fetch();
+                                }}
+                                onError={() => {
+                                    console.log('Login Failed');
+                                }}
+                            />
                         </div>
                         <div className="float-right p-2">
                             <button
