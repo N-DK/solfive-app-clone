@@ -43,7 +43,9 @@ function SongItem({ data, size = 'large', playListId }) {
 
     const handlePlaySong = () => {
         const fetch = async () => {
-            setLoading(true);
+            var audio;
+            var songs;
+            var URL;
             if (window.location.pathname.includes('/player')) {
                 navigator(
                     `/player?id=${data.encodeId}&listId=${
@@ -51,13 +53,14 @@ function SongItem({ data, size = 'large', playListId }) {
                     }`,
                 );
             }
-            const res = await getSoundSongById(data.encodeId);
-            const playlist = await getPlaylistById(playListId ?? listId);
-            const songs = playlist?.data?.song?.items;
-            const URL = res?.data['128'];
-
-            var audio = new Audio(URL);
-
+            if (data.encodeId !== currentSong?.encodeId) {
+                setLoading(true);
+                const res = await getSoundSongById(data.encodeId);
+                const playlist = await getPlaylistById(playListId ?? listId);
+                songs = playlist?.data?.song?.items;
+                URL = res?.data['128'];
+                audio = new Audio(URL);
+            }
             if (currentAudio) {
                 if (data.encodeId === currentSong.encodeId) {
                     audio = currentAudio;
@@ -73,7 +76,14 @@ function SongItem({ data, size = 'large', playListId }) {
                     playlist: songs,
                 }),
             );
-            audio.play();
+            if (currentAudio?.paused || !currentAudio) {
+                const playPromise = audio.play();
+                if (playPromise !== null) {
+                    playPromise.catch(() => {
+                        audio.play();
+                    });
+                }
+            }
             setLoading(false);
         };
         fetch();
@@ -81,7 +91,9 @@ function SongItem({ data, size = 'large', playListId }) {
 
     const handlePauseSong = () => {
         dispatch(pauseSong(currentAudio));
-        currentAudio.pause();
+        if (isPlaying) {
+            currentAudio.pause();
+        }
     };
 
     const handleDownload = (title) => {
@@ -116,9 +128,9 @@ function SongItem({ data, size = 'large', playListId }) {
                         ? 'active'
                         : ''
                 }`,
-            )} text-white p-2`}
+            )} text-white p-2 bg-black`}
         >
-            <div className={`${cx('container')} flex items-center`}>
+            <div className={`${cx('container')} flex items-center `}>
                 <div className={`${isLarge && 'flex-1'}`}>
                     <div className={`flex items-center `}>
                         <div className="w-10 h-10 rounded overflow-hidden mr-2 relative">
@@ -128,11 +140,13 @@ function SongItem({ data, size = 'large', playListId }) {
                             />
                             <button
                                 onClick={
-                                    isPlaying &&
-                                    data.encodeId ===
-                                        state.currentSong?.encodeId
-                                        ? handlePauseSong
-                                        : handlePlaySong
+                                    !loading
+                                        ? isPlaying &&
+                                          data.encodeId ===
+                                              state.currentSong?.encodeId
+                                            ? handlePauseSong
+                                            : handlePlaySong
+                                        : () => {}
                                 }
                                 className={`${cx(
                                     'details',

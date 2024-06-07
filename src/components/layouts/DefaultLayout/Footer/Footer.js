@@ -33,6 +33,8 @@ import { MenuDetails } from '~/components/MenuDetails';
 import { DefaultContext } from '../DefaultLayout';
 import axios from 'axios';
 import { saveAs } from 'file-saver';
+import { HistoryContext } from '~/components/HistoryProvider';
+import { debounce } from 'lodash';
 
 const cx = classNames.bind(styles);
 
@@ -41,7 +43,6 @@ const PREV = -1;
 
 function Footer() {
     const navigate = useNavigate();
-    const location = useLocation();
     const [state, dispatch] = useStore();
     const { currentSong, playListId, isPlaying, currentAudio, playlist } =
         state;
@@ -51,12 +52,12 @@ function Footer() {
     const [timeSong, setTimeSong] = useState();
     const [visible, setVisible] = useState(false);
     const [isMute, setIsMute] = useState(false);
+    const [isRequestInProgress, setIsRequestInProgress] = useState(false);
     const rangeRef = useRef(null);
     const volumeRef = useRef(null);
-    const [backward, setBackward] = useState([]);
     const { openModal, loading, setLoading, openPlayer, setOpenPlayer } =
         useContext(DefaultContext);
-
+    const { previousPath } = useContext(HistoryContext);
     const show = () => setVisible(true);
     const hide = () => setVisible(false);
 
@@ -68,10 +69,16 @@ function Footer() {
 
     const handleNavigatorSong = (type) => {
         const handle = async () => {
+            if (isRequestInProgress) return;
+            setIsRequestInProgress(true);
             setLoading(true);
             const index = getIndexSongInPlaylist(currentSong);
+            var res;
+            var song;
+            var i = 1;
             if (index + type >= 0 && index + type < playlist.length) {
-                const song = playlist[index + type];
+                handlePause();
+                song = playlist[index + type];
                 if (window.location.pathname.includes('/player')) {
                     navigate(
                         `/player?id=${song?.encodeId}&listId=${
@@ -79,21 +86,36 @@ function Footer() {
                         }`,
                     );
                 }
-                const res = await getSoundSongById(song?.encodeId);
-                const URL = res?.data['128'];
-                handlePause();
-                var audio = new Audio(URL);
-                dispatch(
-                    playSong({
-                        audio,
-                        song,
-                        playListId,
-                        playlist,
-                    }),
-                );
-                audio.play();
+                while (!res && index + type + i < playlist.length) {
+                    res = await getSoundSongById(song?.encodeId);
+                    if (!res) {
+                        song = playlist[index + type + i];
+                        i++;
+                    }
+                }
+                if (res) {
+                    const URL = res?.data['128'];
+                    var audio = new Audio(URL);
+                    if (currentAudio.paused) {
+                        dispatch(
+                            playSong({
+                                audio,
+                                song,
+                                playListId,
+                                playlist,
+                            }),
+                        );
+                        const playPromise = audio.play();
+                        if (playPromise !== null) {
+                            playPromise.catch(() => {
+                                audio.play();
+                            });
+                        }
+                    }
+                }
             }
             setLoading(false);
+            setIsRequestInProgress(false);
         };
         handle();
     };
@@ -129,22 +151,16 @@ function Footer() {
                 playlist,
             }),
         );
-        currentAudio.play();
+        if (currentAudio.paused) currentAudio.play();
     };
 
     const handlePause = () => {
         dispatch(pauseSong(currentAudio));
-        currentAudio.pause();
+        if (currentAudio.played) currentAudio.pause();
     };
 
     const handleOpenPlayer = () => {
         if (!openPlayer) {
-            if (!location.pathname.includes('/player')) {
-                setBackward((prev) => [
-                    ...prev,
-                    location.pathname + location.search,
-                ]);
-            }
             if (playListId) {
                 navigate(
                     `/player?id=${currentSong.encodeId}&listId=${playListId}`,
@@ -155,18 +171,9 @@ function Footer() {
             setOpenPlayer(true);
         } else {
             setOpenPlayer(false);
-            setTimeout(() => {
-                navigate(backward[0] ?? '/');
-                setBackward([]);
-            }, 200);
+            navigate(previousPath ?? '/');
         }
     };
-
-    useEffect(() => {
-        if (!backward[0] && location.pathname.includes('/player')) {
-            handleOpenPlayer();
-        }
-    }, []);
 
     useEffect(() => {
         if (rangeRef && timeSong) {

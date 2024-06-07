@@ -6,10 +6,12 @@ import { Sidebar } from './Sidebar';
 import { useStore } from '~/store/hooks';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBars, faCaretRight } from '@fortawesome/free-solid-svg-icons';
-import { createContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Modal } from '~/components/Modal';
 import { getLyricSongById } from '~/service';
+import { Player } from '~/pages/Player';
+import { HistoryContext } from '~/components/HistoryProvider';
 
 const cx = classNames.bind(styles);
 
@@ -25,6 +27,7 @@ function DefaultLayout({ children, setProgress }) {
     const [open, setOpen] = useState(false);
     const [loading, setLoading] = useState(false);
     const [openPlayer, setOpenPlayer] = useState(false);
+    const { previousPath } = useContext(HistoryContext);
 
     const show = () => setOpen(true);
 
@@ -35,6 +38,20 @@ function DefaultLayout({ children, setProgress }) {
     const getLyricLineFromArrayWords = (words) => {
         return words.map((word) => word.data).join(' ');
     };
+
+    useEffect(() => {
+        if (
+            !previousPath &&
+            !openPlayer &&
+            window.location.pathname.includes('/player')
+        ) {
+            setOpenPlayer(true);
+        }
+    }, [previousPath, window.location.pathname]);
+
+    useEffect(() => {
+        document.body.style.overflow = openPlayer ? 'hidden' : 'auto';
+    }, [openPlayer]);
 
     useEffect(() => {
         const fetch = async () => {
@@ -102,6 +119,14 @@ function DefaultLayout({ children, setProgress }) {
                         } w-full`}
                     >
                         <Header />
+                        <div
+                            style={{ marginTop: '69px' }}
+                            className={`bg-black fixed right-0 flex justify-end pr-48 pl-48 top-0 z-500 pt-4 left-0 bottom-0 w-full ${
+                                openPlayer ? 'openPlayer' : 'closePlayer'
+                            }`}
+                        >
+                            {openPlayer && <Player />}
+                        </div>
                         {children}
                     </div>
                 </div>

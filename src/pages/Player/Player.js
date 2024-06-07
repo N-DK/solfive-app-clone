@@ -23,16 +23,41 @@ import { useStore } from '~/store/hooks';
 import { chunkArray, getSectionBySectionId } from '~/utils';
 import { pauseSong, playSong, setPlaylist } from '~/store/actions';
 import { DefaultContext } from '~/components/layouts/DefaultLayout/DefaultLayout';
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 
 const cx = classNames.bind(styles);
 
 function NextInPlayList({ data, songs }) {
     const [state, dispatch] = useStore();
+    const [initPlaylist, setInitPlaylist] = useState(songs);
     const { currentSong } = state;
     const getIndexSongInPlaylist = (currentSong) => {
-        return songs?.findIndex((song) => {
+        return initPlaylist?.findIndex((song) => {
             return song?.encodeId === currentSong?.encodeId;
         });
+    };
+
+    const reorder = (list, startIndex, endIndex) => {
+        const result = Array.from(list);
+        const [removed] = result.splice(startIndex, 1);
+        result.splice(endIndex, 0, removed);
+
+        return result;
+    };
+
+    const onDragEnd = (result) => {
+        if (!result.destination) {
+            return;
+        }
+
+        const reorderedItems = reorder(
+            initPlaylist,
+            result.source.index,
+            result.destination.index,
+        );
+
+        dispatch(setPlaylist(reorderedItems));
+        setInitPlaylist(reorderedItems);
     };
 
     return (
@@ -48,11 +73,40 @@ function NextInPlayList({ data, songs }) {
                 </p>
                 <p>Playlist ‧ {data?.title}</p>
             </div>
-            <div className={`${cx('list-results')}`}>
-                {songs?.map((item, index) => (
-                    <SongItem key={index} size="medium" data={item} />
-                ))}
-            </div>
+            <DragDropContext onDragEnd={onDragEnd}>
+                <Droppable droppableId="droppable">
+                    {(provided) => (
+                        <div
+                            className={`${cx('list-results')}`}
+                            {...provided.droppableProps}
+                            ref={provided.innerRef}
+                        >
+                            {initPlaylist?.map((item, index) => (
+                                <Draggable
+                                    key={item.encodeId}
+                                    draggableId={item.encodeId}
+                                    index={index}
+                                >
+                                    {(provided) => (
+                                        <div
+                                            // className="card"
+                                            ref={provided.innerRef}
+                                            {...provided.draggableProps}
+                                            {...provided.dragHandleProps}
+                                        >
+                                            <SongItem
+                                                size="medium"
+                                                data={item}
+                                            />
+                                        </div>
+                                    )}
+                                </Draggable>
+                            ))}
+                            {provided.placeholder}
+                        </div>
+                    )}
+                </Droppable>
+            </DragDropContext>
         </div>
     );
 }
@@ -241,10 +295,10 @@ function Player() {
     const id = query.get('id');
     const listId = query.get('listId');
     const { openPlayer, setOpenPlayer } = useContext(DefaultContext);
+    const [initListId, setInitListId] = useState(listId);
 
     useState(() => {
         const fetch = async () => {
-            setLoading(true);
             const songRes = await getSongById(id);
             const res = await getSoundSongById(id);
             const playlist = await getPlaylistById(listId);
@@ -270,7 +324,6 @@ function Player() {
                 }),
             );
             if (audio.paused) dispatch(pauseSong(audio));
-            setLoading(false);
         };
         fetch();
     }, []);
@@ -282,40 +335,43 @@ function Player() {
     useEffect(() => {
         const fetch = async () => {
             setLoading(true);
-            const res = await getPlaylistById(listId ?? song?.album?.encodeId);
+            const res = await getPlaylistById(initListId);
             dispatch(setPlaylist(res?.data?.song?.items));
             setDataSongInNextPlaylist(res?.data);
             setLoading(false);
         };
         fetch();
-    }, [listId, song]);
+    }, [initListId]);
 
     useEffect(() => {
-        const fetch = async () => {
+        setInitListId(listId);
+    }, [listId]);
+
+    useEffect(() => {
+        const fetchLyric = async () => {
             const res = await getLyricSongById(id);
             setDataLyric(res?.data);
         };
-
-        fetch();
-    }, [id]);
-
-    useEffect(() => {
-        const fetch = async () => {
+        const fetchSong = async () => {
             const res = await getSongById(id);
             setSong(res?.data);
+            if (!initListId) setInitListId(res?.data?.album?.encodeId);
         };
-        fetch();
+        fetchLyric();
+        fetchSong();
     }, [id]);
 
     useEffect(() => {
-        // setLoading(true);
-        if (component === 2) {
+        if (
+            (component === 2 && song?.encodeId !== currentSong?.encodeId) ||
+            (!dataArtist && component === 2)
+        ) {
             const artist = song?.artists[0];
             const fetch = async () => {
                 setLoading(true);
-                const artistResult = await getArtistById(artist.alias);
+                const artistResult = await getArtistById(artist?.alias);
                 const playlistResults = await getPlaylistById(
-                    artist.playlistId,
+                    artist?.playlistId,
                 );
                 setDataPlaylistArtist(playlistResults?.data);
                 setDataArtist(artistResult?.data);
@@ -324,7 +380,6 @@ function Player() {
 
             fetch();
         }
-        // setLoading(false);
     }, [component, song]);
 
     useEffect(() => {
@@ -342,12 +397,7 @@ function Player() {
     }, [tabFirst]);
 
     return (
-        <div
-            className={`${cx(
-                'wrapper',
-                `${openPlayer ? 'in' : 'out'}`,
-            )} mt-20 fixed right-0 flex justify-between pr-48 pl-48 top-0`}
-        >
+        <div className={`${cx('wrapper')} w-full max-w-7xl`}>
             <div className={`${cx('container')} flex items-start`}>
                 <div className={`w-7/12 mr-6 relative`}>
                     <div

@@ -94,6 +94,10 @@ body {
     z-index: 1000;
 }
 
+.z-500 {
+    z-index: 500;
+}
+
 .pl-108 {
     padding-left: 27rem;
 }
@@ -131,5 +135,37 @@ body {
 
     100% {
         transform: rotate(360deg);
+    }
+}
+
+.openPlayer {
+    animation: openPlayer ease-in-out 0.3s;
+}
+
+.closePlayer {
+    animation: closePlayer ease-in-out 0.3s forwards;
+}
+
+@keyframes openPlayer {
+    0% {
+        transform: translateY(110%);
+        // opacity: 0;
+    }
+
+    100% {
+        transform: translateY(0%);
+        // opacity: 1;
+    }
+}
+
+@keyframes closePlayer {
+    0% {
+        transform: translateY(0%);
+        // opacity: 0;
+    }
+
+    100% {
+        transform: translateY(120%);
+        // opacity: 1;
     }
 }

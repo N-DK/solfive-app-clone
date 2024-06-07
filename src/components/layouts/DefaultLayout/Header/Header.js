@@ -106,8 +106,8 @@ function Header() {
     }, [debouncedValue]);
 
     return (
-        <div className={`${cx('wrapper')} w-full`}>
-            {!showHeader && (
+        <div className={`${cx('wrapper')} w-full z-1000 relative`}>
+            {!showHeader && !value.openPlayer && (
                 <div
                     className={`${cx(
                         'container',
@@ -291,7 +291,7 @@ function Header() {
                     </div>
                 </div>
             )}
-            {showHeader && (
+            {(showHeader || value.openPlayer) && (
                 <div
                     className={`${cx('header_scroll')} ${
                         !value.sidebarState ? 'pl-68 pr-20' : 'pl-108 pr-48'

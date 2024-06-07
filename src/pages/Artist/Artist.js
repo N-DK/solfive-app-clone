@@ -12,6 +12,7 @@ import { DefaultContext } from '~/components/layouts/DefaultLayout/DefaultLayout
 const cx = classNames.bind(styles);
 
 function Artist() {
+    console.log('artists');
     const query = useQuery();
     let id = query.get('id');
     const contentRef = useRef();
@@ -40,7 +41,7 @@ function Artist() {
         };
 
         fetch();
-    }, [id]);
+    }, []);
 
     return (
         <div className={`${cx('wrapper')} text-white`}>
