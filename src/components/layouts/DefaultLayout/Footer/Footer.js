@@ -273,9 +273,11 @@ function Footer() {
     }, [isRepeat, currentAudio, currentSong]);
 
     useEffect(() => {
-        const songsTemp = [...playlist];
-        const playListShuffled = shufflePlaylist(songsTemp, currentSong);
-        dispatch(setPlaylist(playListShuffled));
+        if (isShuffle) {
+            const songsTemp = [...playlist];
+            const playListShuffled = shufflePlaylist(songsTemp, currentSong);
+            dispatch(setPlaylist(playListShuffled));
+        }
     }, [isShuffle]);
 
     return (
