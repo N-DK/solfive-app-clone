@@ -9,6 +9,31 @@
             background-color: #ffffff1a;
         }
     }
+    .btn.heart {
+        position: relative;
+        height: 40px;
+        width: 40px;
+        background: none;
+    }
+
+    .btn.heart::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 70px;
+        height: 70px;
+        background: url('https://res.cloudinary.com/dctauty0m/image/upload/v1717745777/img_mcurix.png')
+            no-repeat;
+        background-size: cover;
+        transform: translate(-50%, -50%);
+        pointer-events: none;
+    }
+
+    .btn.heart.active::before {
+        animation: animate 0.8s steps(28) 1 forwards;
+        background-position: right;
+    }
 }
 
 .volume-progress {

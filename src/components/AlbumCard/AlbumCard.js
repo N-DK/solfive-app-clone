@@ -33,14 +33,18 @@ function AlbumCard({ data }) {
                         'artists',
                     )} text--primary-color text-sm mt-2 truncate`}
                 >
-                    {data?.artists?.map((artist, index) => (
-                        <Link key={index} to={`/artist?id=${artist.alias}`}>
-                            {artist.name ===
-                            data.artists[data.artists.length - 1].name
-                                ? artist.name
-                                : `${artist.name}, `}
-                        </Link>
-                    ))}
+                    {data?.artists?.length > 1 ? (
+                        data?.artists?.map((artist, index) => (
+                            <Link key={index} to={`/artist?id=${artist.alias}`}>
+                                {artist.name ===
+                                data.artists[data.artists.length - 1].name
+                                    ? artist.name
+                                    : `${artist.name}, `}
+                            </Link>
+                        ))
+                    ) : (
+                        <>{data?.artistsNames}</>
+                    )}
                 </p>
             </div>
         </div>

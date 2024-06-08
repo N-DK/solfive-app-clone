@@ -59,7 +59,7 @@
 }
 
 .btn.heart.active::before {
-    animation: animate 0.8s steps(28) 1;
+    animation: animate 0.8s steps(28) 1 forwards;
     background-position: right;
 }
 

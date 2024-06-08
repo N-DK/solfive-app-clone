@@ -18,7 +18,7 @@ import {
 } from '@fortawesome/free-regular-svg-icons';
 import { useStore } from '~/store/hooks';
 import { getPlaylistById, getSoundSongById, dropHeart } from '~/service';
-import { useContext, useEffect, useState } from 'react';
+import { useContext, useEffect, useRef, useState } from 'react';
 import { pauseSong, playSong } from '~/store/actions';
 import { convertSecondsToMMSS, isExistFavoriteSongs } from '~/utils';
 import { useQuery } from '~/hooks';
@@ -28,7 +28,7 @@ import { saveAs } from 'file-saver';
 import { DefaultContext } from '../layouts/DefaultLayout/DefaultLayout';
 const cx = classNames.bind(styles);
 
-function SongItem({ data, size = 'large', playListId, liked }) {
+function SongItem({ data, size = 'large', playListId }) {
     const isLarge = size === 'large';
     const navigator = useNavigate();
     const [state, dispatch] = useStore();
@@ -38,10 +38,16 @@ function SongItem({ data, size = 'large', playListId, liked }) {
     const listId = query.get('listId');
     const { openModal, loading, setLoading, dataUser } =
         useContext(DefaultContext);
-    const [like, setLike] = useState(liked);
-
+    const [like, setLike] = useState(isExistFavoriteSongs(dataUser, data));
+    const activeSongRef = useRef(null);
     const show = () => setVisible(true);
     const hide = () => setVisible(false);
+
+    useEffect(() => {
+        if (activeSongRef) {
+            activeSongRef.current?.scrollIntoView({ behavior: 'smooth' });
+        }
+    }, [currentSong]);
 
     const handlePlaySong = () => {
         const fetch = async () => {
@@ -80,13 +86,13 @@ function SongItem({ data, size = 'large', playListId, liked }) {
             );
             if (currentAudio?.paused || !currentAudio) {
                 const playPromise = audio.play();
+                setLoading(false);
                 if (playPromise !== null) {
                     playPromise.catch(() => {
                         audio.play();
                     });
                 }
             }
-            setLoading(false);
         };
         fetch();
     };
@@ -111,7 +117,6 @@ function SongItem({ data, size = 'large', playListId, liked }) {
         const payload = like ? getFavoriteSongById(data) : data;
         const fetch = async () => {
             const res = await dropHeart(payload);
-            console.log(res);
         };
 
         setLike(!like);
@@ -141,6 +146,13 @@ function SongItem({ data, size = 'large', playListId, liked }) {
 
     return (
         <div
+            ref={
+                data.encodeId === currentSong?.encodeId &&
+                data.encodeId &&
+                currentSong?.encodeId
+                    ? activeSongRef
+                    : null
+            }
             className={`${cx(
                 'wrapper',
                 `${

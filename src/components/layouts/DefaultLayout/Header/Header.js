@@ -25,7 +25,7 @@ function Header() {
     const [showHeader, setShowHeader] = useState(false);
     const debouncedValue = useDebounce(searchText, 500);
     const searchContainerRef = useRef(null);
-    const { openPlayer, dataUser, openModal, sidebarState } =
+    const { openPlayer, dataUser, openModal, sidebarState, setOpenPlayer } =
         useContext(DefaultContext);
     const [state, dispatch] = useStore();
     const { currentSong, currentAudio } = state;
@@ -70,6 +70,7 @@ function Header() {
             );
             audio.play();
             navigator(`/player?id=${item.encodeId}`);
+            setOpenPlayer(true);
             setShowSearchResults(false);
             setLoading(false);
         };
@@ -78,7 +79,7 @@ function Header() {
 
     useEffect(() => {
         const handleScroll = () => {
-            setShowHeader(window.scrollY >= 200);
+            setShowHeader(window.scrollY >= 180);
         };
 
         window.addEventListener('scroll', handleScroll);
@@ -100,7 +101,6 @@ function Header() {
             const res = await search(debouncedValue);
             setData(res?.data);
             setLoading(false);
-            console.log(res?.data);
         };
 
         fetchAPI();

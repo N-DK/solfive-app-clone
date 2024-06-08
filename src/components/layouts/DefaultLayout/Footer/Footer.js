@@ -22,8 +22,13 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useContext, useEffect, useRef, useState } from 'react';
 import { useStore } from '~/store/hooks';
 import { pauseSong, playSong, setPlaylist } from '~/store/actions';
-import { getPlaylistById, getSoundSongById } from '~/service';
-import { convertSecondsToMMSS, formatTime, shufflePlaylist } from '~/utils';
+import { dropHeart, getPlaylistById, getSoundSongById } from '~/service';
+import {
+    convertSecondsToMMSS,
+    formatTime,
+    isExistFavoriteSongs,
+    shufflePlaylist,
+} from '~/utils';
 import {
     faHeart,
     faPlayCircle,
@@ -48,16 +53,25 @@ function Footer() {
         state;
     const [volume, setVolume] = useState(1);
     const [isRepeat, setIsRepeat] = useState(false);
-    const [isShuffle, setIsShuffle] = useState(0);
+    const [isShuffle, setIsShuffle] = useState(false);
     const [timeSong, setTimeSong] = useState();
     const [visible, setVisible] = useState(false);
     const [isMute, setIsMute] = useState(false);
     const [isRequestInProgress, setIsRequestInProgress] = useState(false);
     const rangeRef = useRef(null);
     const volumeRef = useRef(null);
-    const { openModal, loading, setLoading, openPlayer, setOpenPlayer } =
-        useContext(DefaultContext);
+    const {
+        openModal,
+        loading,
+        setLoading,
+        openPlayer,
+        setOpenPlayer,
+        dataUser,
+    } = useContext(DefaultContext);
     const { previousPath } = useContext(HistoryContext);
+    const [like, setLike] = useState(
+        isExistFavoriteSongs(dataUser, currentSong),
+    );
     const show = () => setVisible(true);
     const hide = () => setVisible(false);
 
@@ -65,6 +79,29 @@ function Footer() {
         return playlist?.findIndex((song) => {
             return song.encodeId === currentSong.encodeId;
         });
+    };
+
+    useEffect(() => {
+        setLike(isExistFavoriteSongs(dataUser, currentSong));
+    }, [currentSong]);
+
+    const getFavoriteSongById = (data) => {
+        const item = dataUser?.favoriteList?.song?.items.find(
+            (song) => song.encodeId === data?.encodeId,
+        );
+        item.artists = data?.artists?.map((artist) => ({ name: artist?.name }));
+        item.is_liked = 0;
+        return item;
+    };
+
+    const handleLike = () => {
+        const payload = like ? getFavoriteSongById(currentSong) : currentSong;
+        const fetch = async () => {
+            const res = await dropHeart(payload);
+        };
+
+        setLike(!like);
+        fetch();
     };
 
     const handleNavigatorSong = (type) => {
@@ -106,6 +143,7 @@ function Footer() {
                             }),
                         );
                         const playPromise = audio.play();
+                        setLoading(false);
                         if (playPromise !== null) {
                             playPromise.catch(() => {
                                 audio.play();
@@ -114,7 +152,6 @@ function Footer() {
                     }
                 }
             }
-            setLoading(false);
             setIsRequestInProgress(false);
         };
         handle();
@@ -196,11 +233,18 @@ function Footer() {
     }, [volume]);
 
     useEffect(() => {
-        if (currentSong) {
+        if (currentSong && currentAudio) {
             currentAudio.volume = volume;
-            currentAudio.addEventListener('timeupdate', () => {
+            const handleTimeUpdate = () => {
                 setTimeSong(currentAudio.currentTime);
-            });
+            };
+            currentAudio.addEventListener('timeupdate', handleTimeUpdate);
+            return () => {
+                currentAudio.removeEventListener(
+                    'timeupdate',
+                    handleTimeUpdate,
+                );
+            };
         }
     }, [currentSong, currentAudio]);
 
@@ -229,11 +273,9 @@ function Footer() {
     }, [isRepeat, currentAudio, currentSong]);
 
     useEffect(() => {
-        if (isShuffle > 0) {
-            const songsTemp = [...playlist];
-            const playListShuffled = shufflePlaylist(songsTemp, currentSong);
-            dispatch(setPlaylist(playListShuffled));
-        }
+        const songsTemp = [...playlist];
+        const playListShuffled = shufflePlaylist(songsTemp, currentSong);
+        dispatch(setPlaylist(playListShuffled));
     }, [isShuffle]);
 
     return (
@@ -314,9 +356,17 @@ function Footer() {
                     <button
                         onClick={(e) => {
                             e.stopPropagation();
-                            openModal();
+                            if (dataUser) {
+                                handleLike();
+                            } else {
+                                openModal();
+                            }
                         }}
-                        className="rounded-full w-10 h-10 text--primary-color text-xl lex justify-center items-center mr-3"
+                        className={`${cx(
+                            'btn',
+                            'heart',
+                            `${like && 'active'}`,
+                        )} rounded-full w-10 h-10 text--primary-color text-xl lex justify-center items-center mr-3`}
                     >
                         <FontAwesomeIcon icon={faHeart} />
                     </button>
@@ -430,7 +480,7 @@ function Footer() {
                     <button
                         onClick={(e) => {
                             e.stopPropagation();
-                            setIsShuffle((prev) => prev + 1);
+                            setIsShuffle((prev) => !prev);
                         }}
                         className="rounded-full w-10 h-10 text--primary-color text-xl flex justify-center items-center mr-3"
                     >

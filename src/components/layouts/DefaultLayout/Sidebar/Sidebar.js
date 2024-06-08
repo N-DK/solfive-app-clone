@@ -118,22 +118,31 @@ function Sidebar({ sidebarState }) {
                             )}
                         </div>
                         {dataUser && (
-                            <Link
-                                to={'/playlist?id=favorite'}
+                            <div
                                 className={`${cx(
-                                    '',
-                                )} rounded overflow-hidden text-white flex items-center bg-primary pt-3 pb-3 p-2 justify-between -mt-4`}
+                                    'tab',
+                                    `${
+                                        window.location.pathname +
+                                            window.location.search ===
+                                            '/playlist?id=favorite' && 'active'
+                                    }`,
+                                )}`}
                             >
-                                <p className="flex flex-col">
-                                    <span className="text-sm font-semibold pb-1">
-                                        Danh sách bạn yêu thích
-                                    </span>
-                                    <span className="text-xs">
-                                        Danh sách tự động
-                                    </span>
-                                </p>
-                                <FontAwesomeIcon icon={faThumbTack} />
-                            </Link>
+                                <Link
+                                    to={'/playlist?id=favorite'}
+                                    className={` rounded overflow-hidden text-white flex items-center pt-3 pb-3 p-2 justify-between -mt-4`}
+                                >
+                                    <p className="flex flex-col">
+                                        <span className="text-sm font-semibold pb-1">
+                                            Danh sách bạn yêu thích
+                                        </span>
+                                        <span className="text-xs">
+                                            Danh sách tự động
+                                        </span>
+                                    </p>
+                                    <FontAwesomeIcon icon={faThumbTack} />
+                                </Link>
+                            </div>
                         )}
                     </div>
                 )}
