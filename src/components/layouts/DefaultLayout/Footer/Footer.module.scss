@@ -70,3 +70,12 @@
     transition: all ease-in-out 0.3s;
     transform: rotateX(-180deg);
 }
+
+@keyframes animate {
+    0% {
+        background-position: left;
+    }
+    100% {
+        background-position: right;
+    }
+}

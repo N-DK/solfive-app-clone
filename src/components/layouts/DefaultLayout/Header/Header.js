@@ -148,8 +148,9 @@ function Header() {
                             icon={faMagnifyingGlass}
                         />
                         <input
+                            style={{ outline: 0 }}
                             value={searchText}
-                            className="border-0 bg-transparent outline-0 w-full pl-8 pr-8"
+                            className="border-0 bg-transparent w-full pl-8 pr-8"
                             placeholder="Tìm bài hát, nghệ sỹ, danh sách phát"
                             onChange={(e) => setSearchText(e.target.value)}
                             onClick={handleInputClick}
@@ -353,8 +354,9 @@ function Header() {
                                     icon={faMagnifyingGlass}
                                 />
                                 <input
+                                    style={{ outline: 0 }}
                                     value={searchText}
-                                    className="border-0 bg-transparent outline-0 w-full pl-8 pr-8"
+                                    className="border-0 bg-transparent w-full pl-8 pr-8"
                                     placeholder="Tìm bài hát, nghệ sỹ, danh sách phát"
                                     onChange={(e) =>
                                         setSearchText(e.target.value)
@@ -548,9 +550,7 @@ function Header() {
                                 {dataUser ? (
                                     <div className="w-11 h-11 rounded-full overflow-hidden">
                                         <img
-                                            alt={
-                                                dataUser?.user?.name ?? 'User'
-                                            }
+                                            alt={dataUser?.user?.name ?? 'User'}
                                             src={dataUser?.user?.picture}
                                         />
                                     </div>

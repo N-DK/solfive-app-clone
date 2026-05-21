@@ -28,11 +28,7 @@ import {
     isExistFavoriteSongs,
     shufflePlaylist,
 } from '~/utils';
-import {
-    faHeart,
-    faPlayCircle,
-    faUser,
-} from '@fortawesome/free-regular-svg-icons';
+import { faPlayCircle, faUser } from '@fortawesome/free-regular-svg-icons';
 import { MenuDetails } from '~/components/MenuDetails';
 import { DefaultContext } from '../DefaultLayout';
 import axios from 'axios';
@@ -140,10 +136,7 @@ function Footer() {
             if (index < 0) return;
 
             const firstNextIndex = index + type;
-            if (
-                firstNextIndex < 0 ||
-                firstNextIndex >= activePlaylist.length
-            ) {
+            if (firstNextIndex < 0 || firstNextIndex >= activePlaylist.length) {
                 return;
             }
 
@@ -207,14 +200,7 @@ function Footer() {
                 }
             }
         },
-        [
-            dispatch,
-            handlePause,
-            navigate,
-            playListId,
-            setLoading,
-            volume,
-        ],
+        [dispatch, handlePause, navigate, playListId, setLoading, volume],
     );
 
     const handleDownload = (title) => {
@@ -451,11 +437,9 @@ function Footer() {
                         className={`${cx(
                             'btn',
                             'heart',
-                            `${like && 'active'}`,
+                            `${like ? 'active' : ''}`,
                         )} rounded-full w-10 h-10 text--primary-color text-xl lex justify-center items-center mr-3`}
-                    >
-                        <FontAwesomeIcon icon={faHeart} />
-                    </button>
+                    ></button>
                     <MenuDetails
                         visible={visible}
                         hide={hide}
@@ -549,8 +533,7 @@ function Footer() {
                                         ? lastVolumeRef.current || 0.7
                                         : 0;
                                 if (currentAudio.volume > 0) {
-                                    lastVolumeRef.current =
-                                        currentAudio.volume;
+                                    lastVolumeRef.current = currentAudio.volume;
                                 }
                                 currentAudio.volume = nextVolume;
                                 setVolume(nextVolume);
