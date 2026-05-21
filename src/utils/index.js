@@ -48,6 +48,17 @@ export const shufflePlaylist = (playlist, currentSong) => {
     return res;
 };
 
+export const getPlaylistData = (playlistResponse) => {
+    if (!playlistResponse) return null;
+    if (playlistResponse.song) return playlistResponse;
+
+    return playlistResponse.data ?? playlistResponse;
+};
+
+export const getPlaylistItems = (playlistResponse) => {
+    return getPlaylistData(playlistResponse)?.song?.items ?? [];
+};
+
 export const getSectionBySectionId = (artist, sectionId) => {
     return artist?.sections?.find((section) => section.sectionId === sectionId);
 };

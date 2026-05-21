@@ -20,7 +20,7 @@ import {
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import Slider from 'react-slick';
 import { useStore } from '~/store/hooks';
-import { chunkArray } from '~/utils';
+import { chunkArray, getPlaylistData, getPlaylistItems } from '~/utils';
 import { pauseSong, playSong, setPlaylist } from '~/store/actions';
 import { DefaultContext } from '~/components/layouts/DefaultLayout/DefaultLayout';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
@@ -357,7 +357,7 @@ function Player() {
             if (canceled) return;
 
             const song = songRes?.data;
-            const songs = playlistRes?.data?.song?.items;
+            const songs = getPlaylistItems(playlistRes);
             const URL = shouldReuseAudio
                 ? activeAudio?.src
                 : soundRes?.data?.['128'];
@@ -396,8 +396,9 @@ function Player() {
 
             setLoading(true);
             const res = await getPlaylistById(initListId);
-            dispatch(setPlaylist(res?.data?.song?.items));
-            setDataSongInNextPlaylist(res?.data);
+            const playlist = getPlaylistData(res);
+            dispatch(setPlaylist(playlist?.song?.items));
+            setDataSongInNextPlaylist(playlist);
             setLoading(false);
         };
         fetch();
@@ -436,7 +437,7 @@ function Player() {
                 const playlistResults = await getPlaylistById(
                     artist?.playlistId,
                 );
-                setDataPlaylistArtist(playlistResults?.data);
+                setDataPlaylistArtist(getPlaylistData(playlistResults));
                 setDataArtist(artistResult?.data);
                 setLoading(false);
             };

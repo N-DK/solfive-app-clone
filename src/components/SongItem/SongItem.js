@@ -16,7 +16,11 @@ import { useStore } from '~/store/hooks';
 import { getPlaylistById, getSoundSongById, dropHeart } from '~/service';
 import { useContext, useEffect, useRef, useState } from 'react';
 import { pauseSong, playSong } from '~/store/actions';
-import { convertSecondsToMMSS, isExistFavoriteSongs } from '~/utils';
+import {
+    convertSecondsToMMSS,
+    getPlaylistItems,
+    isExistFavoriteSongs,
+} from '~/utils';
 import { useQuery } from '~/hooks';
 import { MenuDetails } from '../MenuDetails';
 import axios from 'axios';
@@ -73,7 +77,7 @@ function SongItem({ data, size = 'large', playListId }) {
                     const URL = res?.data?.['128'];
                     if (!URL) return;
 
-                    songs = playlist?.data?.song?.items;
+                    songs = getPlaylistItems(playlist);
                     audio = new Audio(URL);
                 }
 

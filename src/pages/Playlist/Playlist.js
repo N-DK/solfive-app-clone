@@ -10,7 +10,7 @@ import { SongItem } from '~/components/SongItem';
 import { useQuery } from '~/hooks';
 import { useContext, useEffect, useState } from 'react';
 import { getPlaylistById, getSoundSongById } from '~/service';
-import { convertSeconds } from '~/utils';
+import { convertSeconds, getPlaylistData, getPlaylistItems } from '~/utils';
 import { MenuDetails } from '~/components/MenuDetails';
 import { useStore } from '~/store/hooks';
 import { playSong } from '~/store/actions';
@@ -23,14 +23,10 @@ const cx = classNames.bind(styles);
 
 function Playlist() {
     let query = useQuery();
-    let id;
-    if (window.location.pathname.includes('/playlist')) {
-        id = query.get('id');
-    }
-
+    const location = useLocation();
+    const id = location.pathname.includes('/playlist') ? query.get('id') : null;
     const [data, setData] = useState([]);
     const [visible, setVisible] = useState(false);
-    const location = useLocation();
     const navigator = useNavigate();
     const [state, dispatch] = useStore();
     const [undefine, setUndefine] = useState(false);
@@ -47,7 +43,7 @@ function Playlist() {
             setLoading(true);
             try {
                 const playlist = await getPlaylistById(id);
-                const songs = playlist?.data?.song?.items;
+                const songs = getPlaylistItems(playlist);
                 if (!songs?.length) return;
 
                 const data = songs[Math.floor(Math.random() * songs.length)];
@@ -95,8 +91,9 @@ function Playlist() {
             const res = await getPlaylistById(id);
             if (canceled) return;
 
-            setUndefine(res ? false : true);
-            setData(res?.data);
+            const playlist = getPlaylistData(res);
+            setUndefine(playlist ? false : true);
+            setData(playlist);
             setProgress(100);
         };
         if (

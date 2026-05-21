@@ -13,6 +13,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { getPlaylistById, getSoundSongById, search } from '~/service';
 import { useStore } from '~/store/hooks';
 import { playSong } from '~/store/actions';
+import { getPlaylistItems } from '~/utils';
 
 const cx = classNames.bind(styles);
 
@@ -54,7 +55,7 @@ function Header() {
                         ? getPlaylistById(item.album.encodeId)
                         : Promise.resolve(null),
                 ]);
-                const songs = playlist?.data?.song?.items;
+                const songs = getPlaylistItems(playlist);
                 const URL = res?.data?.['128'];
                 if (!URL) return;
 
