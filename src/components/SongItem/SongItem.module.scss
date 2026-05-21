@@ -42,7 +42,7 @@
         height: 18px;
         padding: 3px 5px;
         border-radius: 999px;
-        background: rgba(0, 0, 0, 0.55);
+        background: rgba(0, 0, 0, 0);
         transform: translateX(-50%);
         pointer-events: none;
     }
@@ -52,7 +52,7 @@
         width: 3px;
         min-height: 5px;
         border-radius: 999px;
-        background: #67b9f9;
+        background: #ffffff;
         animation: wave 0.72s ease-in-out infinite;
     }
 
