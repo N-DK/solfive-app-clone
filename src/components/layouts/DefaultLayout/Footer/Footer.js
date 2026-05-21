@@ -43,6 +43,12 @@ const cx = classNames.bind(styles);
 
 const NEXT = 1;
 const PREV = -1;
+const stopAudio = (audio) => {
+    if (!audio) return;
+
+    audio.pause();
+    audio.currentTime = 0;
+};
 
 function Footer() {
     const navigate = useNavigate();
@@ -59,6 +65,10 @@ function Footer() {
     const volumeRef = useRef(null);
     const lastVolumeRef = useRef(1);
     const requestInProgressRef = useRef(false);
+    const currentAudioRef = useRef(currentAudio);
+    const currentSongRef = useRef(currentSong);
+    const playlistRef = useRef(playlist);
+    const navigationRequestRef = useRef(0);
     const {
         openModal,
         loading,
@@ -74,16 +84,11 @@ function Footer() {
     const show = () => setVisible(true);
     const hide = () => setVisible(false);
 
-    const getIndexSongInPlaylist = useCallback(
-        (songCheck) => {
-            if (!Array.isArray(playlist) || !songCheck?.encodeId) return -1;
-
-            return playlist.findIndex((song) => {
-                return song.encodeId === songCheck.encodeId;
-            });
-        },
-        [playlist],
-    );
+    useEffect(() => {
+        currentAudioRef.current = currentAudio;
+        currentSongRef.current = currentSong;
+        playlistRef.current = playlist;
+    }, [currentAudio, currentSong, playlist]);
 
     useEffect(() => {
         setLike(isExistFavoriteSongs(dataUser, currentSong));
@@ -112,50 +117,72 @@ function Footer() {
     };
 
     const handlePause = useCallback(() => {
-        if (!currentAudio) return;
+        const activeAudio = currentAudioRef.current;
+        if (!activeAudio) return;
 
-        dispatch(pauseSong(currentAudio));
-        currentAudio.pause();
-    }, [currentAudio, dispatch]);
+        dispatch(pauseSong(activeAudio));
+        activeAudio.pause();
+    }, [dispatch]);
 
     const handleNavigatorSong = useCallback(
         async (type) => {
+            if (requestInProgressRef.current) {
+                return;
+            }
+
+            const activeSong = currentSongRef.current;
+            const activePlaylist = playlistRef.current;
+            if (!activeSong || !Array.isArray(activePlaylist)) return;
+
+            const index = activePlaylist.findIndex((song) => {
+                return song.encodeId === activeSong.encodeId;
+            });
+            if (index < 0) return;
+
+            const firstNextIndex = index + type;
             if (
-                requestInProgressRef.current ||
-                !currentSong ||
-                !Array.isArray(playlist)
+                firstNextIndex < 0 ||
+                firstNextIndex >= activePlaylist.length
             ) {
                 return;
             }
 
-            const index = getIndexSongInPlaylist(currentSong);
-            if (index < 0) return;
-
+            const requestId = navigationRequestRef.current + 1;
+            navigationRequestRef.current = requestId;
             requestInProgressRef.current = true;
             setLoading(true);
 
             try {
-                currentAudio?.pause();
+                const activeAudio = currentAudioRef.current;
+                if (activeAudio) {
+                    stopAudio(activeAudio);
+                    dispatch(pauseSong(activeAudio));
+                }
 
                 for (
                     let nextIndex = index + type;
-                    nextIndex >= 0 && nextIndex < playlist.length;
+                    nextIndex >= 0 && nextIndex < activePlaylist.length;
                     nextIndex += type
                 ) {
-                    const song = playlist[nextIndex];
+                    const song = activePlaylist[nextIndex];
                     const res = await getSoundSongById(song?.encodeId);
+                    if (requestId !== navigationRequestRef.current) return;
+
                     const URL = res?.data?.['128'];
                     if (!URL) continue;
 
                     const audio = new Audio(URL);
+                    audio.volume = volume;
                     const nextPlayListId = playListId ?? song?.album?.encodeId;
+                    currentAudioRef.current = audio;
+                    currentSongRef.current = song;
 
                     dispatch(
                         playSong({
                             audio,
                             song,
                             playListId: nextPlayListId,
-                            playlist,
+                            playlist: activePlaylist,
                         }),
                     );
 
@@ -174,20 +201,19 @@ function Footer() {
 
                 handlePause();
             } finally {
-                setLoading(false);
-                requestInProgressRef.current = false;
+                if (requestId === navigationRequestRef.current) {
+                    setLoading(false);
+                    requestInProgressRef.current = false;
+                }
             }
         },
         [
-            currentAudio,
-            currentSong,
             dispatch,
-            getIndexSongInPlaylist,
             handlePause,
             navigate,
             playListId,
-            playlist,
             setLoading,
+            volume,
         ],
     );
 
