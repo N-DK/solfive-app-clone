@@ -17,7 +17,6 @@ import { playSong } from '~/store/actions';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { DefaultContext } from '~/components/layouts/DefaultLayout/DefaultLayout';
 import { Undefined } from '~/components/Undefined';
-import { HistoryContext } from '~/components/HistoryProvider';
 
 const cx = classNames.bind(styles);
 
@@ -25,7 +24,7 @@ function Playlist() {
     let query = useQuery();
     const location = useLocation();
     const id = location.pathname.includes('/playlist') ? query.get('id') : null;
-    const [data, setData] = useState([]);
+    const [data, setData] = useState(null);
     const [visible, setVisible] = useState(false);
     const navigator = useNavigate();
     const [state, dispatch] = useStore();
@@ -33,7 +32,7 @@ function Playlist() {
     const { currentAudio, currentSong } = state;
     const { setLoading, setProgress, setOpenPlayer } =
         useContext(DefaultContext);
-    const { previousPath } = useContext(HistoryContext);
+    // const { previousPath } = useContext(HistoryContext);
 
     const show = () => setVisible(true);
     const hide = () => setVisible(false);
@@ -93,23 +92,18 @@ function Playlist() {
 
             const playlist = getPlaylistData(res);
             setUndefine(playlist ? false : true);
-            setData(playlist);
+            setData(playlist ?? null);
             setProgress(100);
         };
-        if (
-            id &&
-            !(
-                location.pathname + location.search ===
-                previousPath
-            )
-        ) {
+
+        if (id) {
             fetch();
         }
 
         return () => {
             canceled = true;
         };
-    }, [id, location.pathname, location.search, previousPath, setProgress]);
+    }, [id, setProgress]);
 
     return (
         <>
@@ -208,7 +202,7 @@ function Playlist() {
                             </div>
                         </div>
                         <div className="mt-14">
-                            {data?.song?.items.map((item, index) => (
+                            {data?.song?.items?.map((item, index) => (
                                 <SongItem
                                     key={item.encodeId}
                                     data={item}
@@ -223,7 +217,7 @@ function Playlist() {
                             backgroundImage: `url(${
                                 data?.thumbnailM
                                     ? data?.thumbnailM
-                                    : 'https://solfive.app.tranviet.site/static/images/body-bg.jpg'
+                                    : 'https://solfive.travis.io.vn/static/images/body-bg.jpg'
                             })`,
                             boxShadow:
                                 'rgb(33, 33, 33) 0px 0px 30px 15px inset',

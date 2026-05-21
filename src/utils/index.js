@@ -38,7 +38,8 @@ export const chunkArray = (myArray, chunk_size) => {
 
 export const shufflePlaylist = (playlist, currentSong) => {
     if (!Array.isArray(playlist)) return [];
-    if (!currentSong?.encodeId) return [...playlist].sort(() => Math.random() - 0.5);
+    if (!currentSong?.encodeId)
+        return [...playlist].sort(() => Math.random() - 0.5);
 
     const shuffled = playlist
         .filter((song) => song.encodeId !== currentSong.encodeId)

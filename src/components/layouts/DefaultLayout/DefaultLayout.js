@@ -58,11 +58,7 @@ function DefaultLayout({ children, setProgress }) {
     };
 
     useEffect(() => {
-        if (
-            !previousPath &&
-            !openPlayer &&
-            isPlayerPath
-        ) {
+        if (!previousPath && !openPlayer && isPlayerPath) {
             setOpenPlayer(true);
         }
     }, [previousPath, openPlayer, isPlayerPath]);
@@ -119,7 +115,10 @@ function DefaultLayout({ children, setProgress }) {
             currentAudio.addEventListener('timeupdate', handleTimeUpdate);
             handleTimeUpdate();
             removeListener = () =>
-                currentAudio.removeEventListener('timeupdate', handleTimeUpdate);
+                currentAudio.removeEventListener(
+                    'timeupdate',
+                    handleTimeUpdate,
+                );
         };
 
         fetch();
@@ -186,7 +185,7 @@ function DefaultLayout({ children, setProgress }) {
                 <div
                     className="absolute h-80 top-0 left-0 bg-no-repeat bg-cover right-0"
                     style={{
-                        backgroundImage: `url('https://solfive.app.tranviet.site/static/images/body-bg.jpg')`,
+                        backgroundImage: `url('https://solfive.travis.io.vn/static/images/body-bg.jpg')`,
                         boxShadow: 'rgb(33, 33, 33) 0px 0px 30px 15px inset',
                     }}
                 ></div>
