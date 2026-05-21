@@ -8,6 +8,7 @@
 
     .btn_play {
         background: rgba(0, 0, 0, 0.6);
+        z-index: 2;
     }
 
     &:hover {
@@ -26,6 +27,45 @@
         &:hover {
             text-decoration: underline;
         }
+    }
+}
+
+.thumbnail {
+    .wave {
+        position: absolute;
+        left: 50%;
+        bottom: 5px;
+        z-index: 1;
+        display: flex;
+        align-items: flex-end;
+        gap: 2px;
+        height: 18px;
+        padding: 3px 5px;
+        border-radius: 999px;
+        background: rgba(0, 0, 0, 0.55);
+        transform: translateX(-50%);
+        pointer-events: none;
+    }
+
+    .wave span {
+        display: block;
+        width: 3px;
+        min-height: 5px;
+        border-radius: 999px;
+        background: #67b9f9;
+        animation: wave 0.72s ease-in-out infinite;
+    }
+
+    .wave span:nth-child(2) {
+        animation-delay: 0.12s;
+    }
+
+    .wave span:nth-child(3) {
+        animation-delay: 0.24s;
+    }
+
+    .wave span:nth-child(4) {
+        animation-delay: 0.36s;
     }
 }
 
@@ -69,5 +109,15 @@
     }
     100% {
         background-position: right;
+    }
+}
+
+@keyframes wave {
+    0%,
+    100% {
+        height: 5px;
+    }
+    50% {
+        height: 15px;
     }
 }

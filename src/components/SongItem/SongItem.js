@@ -41,6 +41,8 @@ function SongItemContent({ data, size = 'large', playListId }) {
         useContext(DefaultContext);
     const [like, setLike] = useState(isExistFavoriteSongs(dataUser, data));
     const activeSongRef = useRef(null);
+    const isCurrentSong = data.encodeId === currentSong?.encodeId;
+    const isCurrentPlaying = isPlaying && isCurrentSong;
     const show = () => setVisible(true);
     const hide = () => setVisible(false);
 
@@ -167,38 +169,40 @@ function SongItemContent({ data, size = 'large', playListId }) {
     return (
         <div
             ref={
-                data.encodeId === currentSong?.encodeId &&
-                data.encodeId &&
-                currentSong?.encodeId
+                isCurrentSong && data.encodeId && currentSong?.encodeId
                     ? activeSongRef
                     : null
             }
             className={`${cx(
                 'wrapper',
-                `${
-                    data.encodeId === currentSong?.encodeId &&
-                    data.encodeId &&
-                    currentSong?.encodeId
-                        ? 'active'
-                        : ''
-                }`,
+                `${isCurrentSong && data.encodeId ? 'active' : ''}`,
             )} text-white p-2 bg-black`}
         >
             <div className={`${cx('container')} flex items-center `}>
                 <div className={`${isLarge && 'flex-1'}`}>
                     <div className={`flex items-center `}>
-                        <div className="w-10 h-10 rounded overflow-hidden mr-2 relative">
+                        <div
+                            className={`${cx(
+                                'thumbnail',
+                            )} w-10 h-10 rounded overflow-hidden mr-2 relative`}
+                        >
                             <img
                                 alt={data?.title ?? ''}
                                 className="w-full h-full object-cover"
                                 src={data.thumbnail}
                             />
+                            {isCurrentPlaying && (
+                                <div className={`${cx('wave')}`}>
+                                    <span></span>
+                                    <span></span>
+                                    <span></span>
+                                    <span></span>
+                                </div>
+                            )}
                             <button
                                 onClick={
                                     !loading
-                                        ? isPlaying &&
-                                          data.encodeId ===
-                                              state.currentSong?.encodeId
+                                        ? isCurrentPlaying
                                             ? handlePauseSong
                                             : handlePlaySong
                                         : () => {}
@@ -219,9 +223,7 @@ function SongItemContent({ data, size = 'large', playListId }) {
                                 ) : (
                                     <FontAwesomeIcon
                                         icon={
-                                            isPlaying &&
-                                            data.encodeId ===
-                                                state.currentSong?.encodeId
+                                            isCurrentPlaying
                                                 ? faPause
                                                 : faPlay
                                         }
