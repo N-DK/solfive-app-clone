@@ -1,7 +1,6 @@
 import classNames from 'classnames/bind';
 import styles from './Home.module.scss';
 import { ListPlaylist } from '~/components/ListPlaylist';
-import { Trending } from '~/components/Trending';
 import { useContext, useEffect, useState } from 'react';
 import { getHome } from '~/service';
 import { DefaultContext } from '~/components/layouts/DefaultLayout/DefaultLayout';

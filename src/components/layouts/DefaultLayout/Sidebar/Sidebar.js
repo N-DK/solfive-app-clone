@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import styles from './Sidebar.module.scss';
 import classNames from 'classnames/bind';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faHome, faThumbTack } from '@fortawesome/free-solid-svg-icons';
+import { faThumbTack } from '@fortawesome/free-solid-svg-icons';
 import { useContext, useEffect, useState } from 'react';
 import { DefaultContext } from '../DefaultLayout';
 import {

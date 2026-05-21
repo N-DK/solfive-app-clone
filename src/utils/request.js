@@ -1,11 +1,11 @@
 import axios from 'axios';
 
 const request = axios.create({
-    baseURL: 'https://apisolfive.app.tranviet.site/v2/api/',
+    baseURL: 'https://api-solfive.travis.io.vn/v2/api',
 });
 
 const requestUser = axios.create({
-    baseURL: 'https://apisolfive.app.tranviet.site/v2/user',
+    baseURL: 'https://api-solfive.travis.io.vn/v2/user',
 });
 
 export const get = async (path, options = {}) => {

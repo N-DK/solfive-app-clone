@@ -4,7 +4,6 @@ import classNames from 'classnames/bind';
 import {
     faBackwardStep,
     faCaretDown,
-    faCaretUp,
     faDownload,
     faEllipsisV,
     faForwardStep,
@@ -18,11 +17,11 @@ import {
     faVolumeHigh,
     faVolumeMute,
 } from '@fortawesome/free-solid-svg-icons';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useContext, useEffect, useRef, useState } from 'react';
 import { useStore } from '~/store/hooks';
 import { pauseSong, playSong, setPlaylist } from '~/store/actions';
-import { dropHeart, getPlaylistById, getSoundSongById } from '~/service';
+import { dropHeart, getSoundSongById } from '~/service';
 import {
     convertSecondsToMMSS,
     formatTime,
@@ -39,7 +38,6 @@ import { DefaultContext } from '../DefaultLayout';
 import axios from 'axios';
 import { saveAs } from 'file-saver';
 import { HistoryContext } from '~/components/HistoryProvider';
-import { debounce } from 'lodash';
 
 const cx = classNames.bind(styles);
 

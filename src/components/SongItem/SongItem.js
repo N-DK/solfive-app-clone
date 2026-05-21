@@ -11,11 +11,7 @@ import {
     faShare,
     faSpinner,
 } from '@fortawesome/free-solid-svg-icons';
-import {
-    faHeart,
-    faPlayCircle,
-    faUser,
-} from '@fortawesome/free-regular-svg-icons';
+import { faPlayCircle, faUser } from '@fortawesome/free-regular-svg-icons';
 import { useStore } from '~/store/hooks';
 import { getPlaylistById, getSoundSongById, dropHeart } from '~/service';
 import { useContext, useEffect, useRef, useState } from 'react';

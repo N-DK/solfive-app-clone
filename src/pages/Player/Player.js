@@ -20,11 +20,7 @@ import {
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import Slider from 'react-slick';
 import { useStore } from '~/store/hooks';
-import {
-    chunkArray,
-    getSectionBySectionId,
-    isExistFavoriteSongs,
-} from '~/utils';
+import { chunkArray } from '~/utils';
 import { pauseSong, playSong, setPlaylist } from '~/store/actions';
 import { DefaultContext } from '~/components/layouts/DefaultLayout/DefaultLayout';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';

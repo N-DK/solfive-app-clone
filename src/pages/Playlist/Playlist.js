@@ -10,7 +10,7 @@ import { SongItem } from '~/components/SongItem';
 import { useQuery } from '~/hooks';
 import { useContext, useEffect, useState } from 'react';
 import { getPlaylistById, getSoundSongById } from '~/service';
-import { convertSeconds, isExistFavoriteSongs } from '~/utils';
+import { convertSeconds } from '~/utils';
 import { MenuDetails } from '~/components/MenuDetails';
 import { useStore } from '~/store/hooks';
 import { playSong } from '~/store/actions';
