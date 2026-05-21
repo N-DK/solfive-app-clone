@@ -26,9 +26,10 @@ import { MenuDetails } from '../MenuDetails';
 import axios from 'axios';
 import { saveAs } from 'file-saver';
 import { DefaultContext } from '../layouts/DefaultLayout/DefaultLayout';
+import { SongItemSkeleton } from '~/components/Skeleton';
 const cx = classNames.bind(styles);
 
-function SongItem({ data, size = 'large', playListId }) {
+function SongItemContent({ data, size = 'large', playListId }) {
     const isLarge = size === 'large';
     const navigator = useNavigate();
     const [state, dispatch] = useStore();
@@ -311,9 +312,13 @@ function SongItem({ data, size = 'large', playListId }) {
                                         title: 'Chuyển đến trang nghệ sĩ',
                                         icon: faUser,
                                         handle: () => {
-                                            navigator(
-                                                `/artist?id=${data?.artists[0].alias}`,
-                                            );
+                                            const artistAlias =
+                                                data?.artists?.[0]?.alias;
+                                            if (artistAlias) {
+                                                navigator(
+                                                    `/artist?id=${artistAlias}`,
+                                                );
+                                            }
                                         },
                                     },
                                     {
@@ -348,6 +353,12 @@ function SongItem({ data, size = 'large', playListId }) {
             </div>
         </div>
     );
+}
+
+function SongItem(props) {
+    if (!props.data) return <SongItemSkeleton size={props.size} />;
+
+    return <SongItemContent {...props} />;
 }
 
 export default SongItem;

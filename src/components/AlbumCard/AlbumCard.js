@@ -1,10 +1,13 @@
 import styles from './AlbumCard.module.scss';
 import classNames from 'classnames/bind';
 import { Link } from 'react-router-dom';
+import { AlbumCardSkeleton } from '~/components/Skeleton';
 
 const cx = classNames.bind(styles);
 
 function AlbumCard({ data }) {
+    if (!data) return <AlbumCardSkeleton />;
+
     return (
         <div className={`w-44`}>
             <Link to={`/playlist?id=${data?.encodeId}`}>

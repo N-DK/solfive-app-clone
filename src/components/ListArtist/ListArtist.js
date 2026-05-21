@@ -8,6 +8,7 @@ import {
     faChevronLeft,
     faChevronRight,
 } from '@fortawesome/free-solid-svg-icons';
+import { ArtistItemSkeleton } from '~/components/Skeleton';
 
 const cx = classNames.bind(styles);
 
@@ -21,6 +22,8 @@ const _settings_ = {
 };
 
 function Artist({ data }) {
+    if (!data) return <ArtistItemSkeleton />;
+
     return (
         <div className="flex flex-col justify-center items-center">
             <div className="w-40 h-40 rounded-full overflow-hidden">
@@ -46,9 +49,16 @@ function Artist({ data }) {
     );
 }
 
-function ListArtist({ data, title = 'Nghệ sỹ tương tự', settingMore }) {
+function ListArtist({
+    data,
+    title = 'Nghệ sỹ tương tự',
+    settingMore,
+    isLoading = data == null,
+}) {
     const slider = useRef(null);
     const settings = { ..._settings_, ...settingMore };
+    const skeletonItems = Array.from({ length: settings?.slidesToShow ?? 3 });
+
     return (
         <div className={`${cx('wrapper')}`}>
             <div className="flex justify-between items-center">
@@ -59,12 +69,14 @@ function ListArtist({ data, title = 'Nghệ sỹ tương tự', settingMore }) {
                 </div>
                 <div className={`flex items-center`}>
                     <button
+                        disabled={isLoading}
                         onClick={() => slider?.current?.slickPrev()}
                         className={`w-10 h-10 border rounded-full flex items-center justify-center mr-2 text-white`}
                     >
                         <FontAwesomeIcon icon={faChevronLeft} />
                     </button>
                     <button
+                        disabled={isLoading}
                         onClick={() => slider?.current?.slickNext()}
                         className={`w-10 h-10 border rounded-full flex items-center justify-center text-white`}
                     >
@@ -74,9 +86,13 @@ function ListArtist({ data, title = 'Nghệ sỹ tương tự', settingMore }) {
             </div>
             <div>
                 <Slider ref={slider} {...settings}>
-                    {data?.map((artist, index) => (
-                        <Artist key={index} data={artist} />
-                    ))}
+                    {isLoading
+                        ? skeletonItems.map((_, index) => (
+                              <ArtistItemSkeleton key={index} />
+                          ))
+                        : data?.map((artist, index) => (
+                              <Artist key={index} data={artist} />
+                          ))}
                 </Slider>
             </div>
         </div>

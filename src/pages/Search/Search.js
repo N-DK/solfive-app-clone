@@ -6,6 +6,7 @@ import { DefaultContext } from '~/components/layouts/DefaultLayout/DefaultLayout
 import { useContext, useEffect, useState } from 'react';
 import { useQuery } from '~/hooks';
 import { search } from '~/service';
+import { SongItemSkeleton } from '~/components/Skeleton';
 
 function Search() {
     const [data, setData] = useState();
@@ -13,28 +14,44 @@ function Search() {
     const q = query.get('q');
     const { setProgress } = useContext(DefaultContext);
     const [undefine, setUndefine] = useState(false);
+    const isLoading = !!q && !data && !undefine;
+    const skeletonSongs = Array.from({ length: 8 });
 
     useEffect(() => {
         let canceled = false;
 
         const fetch = async () => {
+            setData();
+            setUndefine(false);
             setProgress(10);
             setProgress(40);
             setProgress(70);
             const res = await search(q);
             if (canceled) return;
 
+            const result = res?.data;
+            if (!result) {
+                setUndefine(true);
+                setProgress(100);
+                return;
+            }
+
             if (
-                res?.data?.counter?.song === 0 &&
-                res?.data?.counter?.artist === 0 &&
-                res?.data?.counter?.playlist === 0
+                result?.counter?.song === 0 &&
+                result?.counter?.artist === 0 &&
+                result?.counter?.playlist === 0
             )
                 setUndefine(true);
-            setData(res?.data);
+            setData(result);
             setProgress(100);
         };
 
-        if (q) fetch();
+        if (q) {
+            fetch();
+        } else {
+            setData();
+            setUndefine(false);
+        }
 
         return () => {
             canceled = true;
@@ -43,6 +60,32 @@ function Search() {
 
     return (
         <>
+            {isLoading && (
+                <div>
+                    <div className="mt-12">
+                        <ListArtist
+                            title={'Nghệ sỹ'}
+                            isLoading
+                            settingMore={{
+                                slidesToShow: 7,
+                            }}
+                        />
+                    </div>
+                    <div className="mt-12">
+                        <h1 className="font-semibold text-2xl text-white">
+                            Bài hát
+                        </h1>
+                        <div>
+                            {skeletonSongs.map((_, index) => (
+                                <SongItemSkeleton key={index} />
+                            ))}
+                        </div>
+                    </div>
+                    <div>
+                        <ListPlaylist title={'Danh sách phát'} isLoading />
+                    </div>
+                </div>
+            )}
             {data && !undefine && (
                 <div>
                     <div className="mt-12">

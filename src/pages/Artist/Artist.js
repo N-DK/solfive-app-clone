@@ -8,6 +8,7 @@ import { useContext, useEffect, useRef, useState } from 'react';
 import { getArtistById } from '~/service';
 import { getSectionBySectionId } from '~/utils';
 import { DefaultContext } from '~/components/layouts/DefaultLayout/DefaultLayout';
+import { SkeletonBlock, SongItemSkeleton } from '~/components/Skeleton';
 
 const cx = classNames.bind(styles);
 
@@ -19,6 +20,8 @@ function Artist() {
     const [data, setData] = useState();
     const [showMore, setShowMore] = useState();
     const { setProgress } = useContext(DefaultContext);
+    const isLoading = !data;
+    const skeletonSongs = Array.from({ length: 8 });
 
     const handleShowMore = () => {
         if (contentRef) {
@@ -56,52 +59,84 @@ function Artist() {
                 <div className={`${cx('')} mt-16`}>
                     <div>
                         <h1 className={`${cx('')} mb-10 font-semibold`}>
-                            {data?.name}
+                            {isLoading ? (
+                                <SkeletonBlock className="h-10 w-72" />
+                            ) : (
+                                data?.name
+                            )}
                         </h1>
                         <div className="overflow-hidden" ref={contentRef}>
-                            <p className="pb-2">Quốc gia: {data?.national}</p>
-                            <p className="pb-2">Tên Thật: {data?.realname}</p>
-                            <p className="pb-2">Năm sinh: {data?.birthday}</p>
-                            <div
-                                className="leading-7"
-                                dangerouslySetInnerHTML={{
-                                    __html: data?.biography,
-                                }}
-                            />
+                            {isLoading ? (
+                                <div>
+                                    <SkeletonBlock className="h-5 w-40 mb-3" />
+                                    <SkeletonBlock className="h-5 w-52 mb-3" />
+                                    <SkeletonBlock className="h-5 w-36 mb-5" />
+                                    <SkeletonBlock className="h-4 w-full mb-3" />
+                                    <SkeletonBlock className="h-4 w-11/12 mb-3" />
+                                    <SkeletonBlock className="h-4 w-10/12" />
+                                </div>
+                            ) : (
+                                <>
+                                    <p className="pb-2">
+                                        Quốc gia: {data?.national}
+                                    </p>
+                                    <p className="pb-2">
+                                        Tên Thật: {data?.realname}
+                                    </p>
+                                    <p className="pb-2">
+                                        Năm sinh: {data?.birthday}
+                                    </p>
+                                    <div
+                                        className="leading-7"
+                                        dangerouslySetInnerHTML={{
+                                            __html: data?.biography,
+                                        }}
+                                    />
+                                </>
+                            )}
                         </div>
                     </div>
-                    <p
-                        onClick={handleShowMore}
-                        className="font-semibold pt-4 cursor-pointer uppercase"
-                    >
-                        {!showMore ? 'ẩn bớt' : 'hiển thị thêm'}
-                    </p>
+                    {!isLoading && (
+                        <p
+                            onClick={handleShowMore}
+                            className="font-semibold pt-4 cursor-pointer uppercase"
+                        >
+                            {!showMore ? 'ẩn bớt' : 'hiển thị thêm'}
+                        </p>
+                    )}
                 </div>
                 <div className={`${cx('')} mt-12`}>
                     <h1 className="font-semibold">Bài hát</h1>
                     <div>
-                        {getSectionBySectionId(data, 'aSongs')
-                            ?.items?.slice(0, 10)
-                            .map((item, index) => (
-                                <SongItem
-                                    key={index}
-                                    data={item}
-                                    playListId={data?.playlistId}
-                                />
-                            ))}
+                        {isLoading
+                            ? skeletonSongs.map((_, index) => (
+                                  <SongItemSkeleton key={index} />
+                              ))
+                            : getSectionBySectionId(data, 'aSongs')
+                                  ?.items?.slice(0, 10)
+                                  .map((item, index) => (
+                                      <SongItem
+                                          key={index}
+                                          data={item}
+                                          playListId={data?.playlistId}
+                                      />
+                                  ))}
                     </div>
-                    <Link
-                        to={`/playlist?id=${data?.playlistId}`}
-                        className={`${cx(
-                            'btn-login',
-                        )} border text-white p-2.5 text-sm font-semibold rounded-sm mt-3 inline-block`}
-                    >
-                        Xem tất cả bài hát
-                    </Link>
+                    {!isLoading && (
+                        <Link
+                            to={`/playlist?id=${data?.playlistId}`}
+                            className={`${cx(
+                                'btn-login',
+                            )} border text-white p-2.5 text-sm font-semibold rounded-sm mt-3 inline-block`}
+                        >
+                            Xem tất cả bài hát
+                        </Link>
+                    )}
                 </div>
                 <ListPlaylist
                     title={'Album'}
                     data={getSectionBySectionId(data, 'aSingle')?.items}
+                    isLoading={isLoading}
                 />
             </div>
             <div

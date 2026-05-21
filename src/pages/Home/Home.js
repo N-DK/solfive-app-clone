@@ -4,8 +4,9 @@ import { getHome } from '~/service';
 import { DefaultContext } from '~/components/layouts/DefaultLayout/DefaultLayout';
 
 function Home() {
-    const [data, setData] = useState([]);
+    const [data, setData] = useState(null);
     const { setProgress } = useContext(DefaultContext);
+    const skeletonSections = Array.from({ length: 4 });
 
     useEffect(() => {
         let canceled = false;
@@ -31,33 +32,37 @@ function Home() {
     return (
         <div>
             <div>
-                {data?.items?.map(
-                    (section, index) =>
-                        section.sectionType !== 'new-release' &&
-                        section.title &&
-                        section.items &&
-                        (section.items.length <= 5 ? (
-                            <ListPlaylist
-                                key={index}
-                                title={section?.title}
-                                data={section.items}
-                                settings={{
-                                    dots: false,
-                                    infinite: false,
-                                    speed: 500,
-                                    slidesToShow: 5,
-                                    slidesToScroll: 1,
-                                    arrows: false,
-                                }}
-                            />
-                        ) : (
-                            <ListPlaylist
-                                key={index}
-                                title={section?.title}
-                                data={section.items}
-                            />
-                        )),
-                )}
+                {!data
+                    ? skeletonSections.map((_, index) => (
+                          <ListPlaylist key={index} isLoading />
+                      ))
+                    : data?.items?.map(
+                          (section, index) =>
+                              section.sectionType !== 'new-release' &&
+                              section.title &&
+                              section.items &&
+                              (section.items.length <= 5 ? (
+                                  <ListPlaylist
+                                      key={index}
+                                      title={section?.title}
+                                      data={section.items}
+                                      settings={{
+                                          dots: false,
+                                          infinite: false,
+                                          speed: 500,
+                                          slidesToShow: 5,
+                                          slidesToScroll: 1,
+                                          arrows: false,
+                                      }}
+                                  />
+                              ) : (
+                                  <ListPlaylist
+                                      key={index}
+                                      title={section?.title}
+                                      data={section.items}
+                                  />
+                              )),
+                      )}
             </div>
         </div>
     );
