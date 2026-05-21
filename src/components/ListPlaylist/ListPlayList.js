@@ -1,7 +1,6 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { AlbumCard } from '../AlbumCard';
 import Slider from 'react-slick';
-import styles from './ListPlaylist.module.scss';
 import 'slick-carousel/slick/slick.css';
 import 'slick-carousel/slick/slick-theme.css';
 import {
@@ -9,9 +8,6 @@ import {
     faChevronRight,
 } from '@fortawesome/free-solid-svg-icons';
 import { useRef } from 'react';
-import classNames from 'classnames/bind';
-
-const cx = classNames.bind(styles);
 
 const _settings_ = {
     dots: false,

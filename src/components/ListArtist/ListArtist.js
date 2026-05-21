@@ -24,7 +24,12 @@ function Artist({ data }) {
     return (
         <div className="flex flex-col justify-center items-center">
             <div className="w-40 h-40 rounded-full overflow-hidden">
-                <img width="100%" height="100%" src={data?.thumbnailM} />
+                <img
+                    alt={data?.name ?? ''}
+                    width="100%"
+                    height="100%"
+                    src={data?.thumbnailM}
+                />
             </div>
             <div className="w-full mt-3">
                 <Link

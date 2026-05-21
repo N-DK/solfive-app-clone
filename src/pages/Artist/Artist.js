@@ -12,7 +12,6 @@ import { DefaultContext } from '~/components/layouts/DefaultLayout/DefaultLayout
 const cx = classNames.bind(styles);
 
 function Artist() {
-    console.log('artists');
     const query = useQuery();
     let id = query.get('id');
     const contentRef = useRef();
@@ -31,17 +30,25 @@ function Artist() {
     };
 
     useEffect(() => {
+        let canceled = false;
+
         const fetch = async () => {
             setProgress(10);
             setProgress(40);
             setProgress(70);
             const res = await getArtistById(id);
+            if (canceled) return;
+
             setData(res?.data);
             setProgress(100);
         };
 
-        fetch();
-    }, []);
+        if (id) fetch();
+
+        return () => {
+            canceled = true;
+        };
+    }, [id, setProgress]);
 
     return (
         <div className={`${cx('wrapper')} text-white`}>

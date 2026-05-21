@@ -3,10 +3,9 @@ import { ListPlaylist } from '~/components/ListPlaylist';
 import { SongItem } from '~/components/SongItem';
 import { Undefined } from '~/components/Undefined';
 import { DefaultContext } from '~/components/layouts/DefaultLayout/DefaultLayout';
-
-const { useState, useEffect, useContext } = require('react');
-const { useQuery } = require('~/hooks');
-const { search } = require('~/service');
+import { useContext, useEffect, useState } from 'react';
+import { useQuery } from '~/hooks';
+import { search } from '~/service';
 
 function Search() {
     const [data, setData] = useState();
@@ -16,30 +15,38 @@ function Search() {
     const [undefine, setUndefine] = useState(false);
 
     useEffect(() => {
+        let canceled = false;
+
         const fetch = async () => {
             setProgress(10);
             setProgress(40);
             setProgress(70);
             const res = await search(q);
+            if (canceled) return;
+
             if (
-                res.data.counter.song === 0 &&
-                res.data.counter.artist === 0 &&
-                res.data.counter.playlist === 0
+                res?.data?.counter?.song === 0 &&
+                res?.data?.counter?.artist === 0 &&
+                res?.data?.counter?.playlist === 0
             )
                 setUndefine(true);
-            setData(res.data);
+            setData(res?.data);
             setProgress(100);
         };
 
-        fetch();
-    }, []);
+        if (q) fetch();
+
+        return () => {
+            canceled = true;
+        };
+    }, [q, setProgress]);
 
     return (
         <>
             {data && !undefine && (
                 <div>
                     <div className="mt-12">
-                        {data.counter.artists && (
+                        {data.counter.artist > 0 && (
                             <ListArtist
                                 data={data['artists']}
                                 title={'Nghệ sỹ'}
@@ -54,7 +61,7 @@ function Search() {
                             Bài hát
                         </h1>
                         <div>
-                            {data.counter.songs &&
+                            {data.counter.song > 0 &&
                                 data['songs'].map((item, index) => (
                                     <SongItem
                                         key={index}
@@ -65,7 +72,7 @@ function Search() {
                         </div>
                     </div>
                     <div>
-                        {data.counter.playlists && (
+                        {data.counter.playlist > 0 && (
                             <ListPlaylist
                                 data={data['playlists']}
                                 title={'Danh sách phát'}

@@ -16,23 +16,25 @@ function reducer(state, action) {
                 currentAudio: action.payload.audio,
                 currentSong: action.payload.song,
                 playListId: action.payload.playListId,
-                playlist: action.payload.playlist,
+                playlist: action.payload.playlist ?? state.playlist,
                 isPlaying: true,
             };
         }
         case PAUSE_SONG: {
             return {
                 ...state,
-                currentAudio: action.payload,
+                currentAudio: action.payload ?? state.currentAudio,
                 isPlaying: false,
             };
         }
         case SET_PLAYLIST: {
             return {
                 ...state,
-                playlist: action.payload,
+                playlist: action.payload ?? [],
             };
         }
+        default:
+            return state;
     }
 }
 

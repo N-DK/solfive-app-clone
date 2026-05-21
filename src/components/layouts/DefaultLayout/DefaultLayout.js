@@ -7,7 +7,7 @@ import { useStore } from '~/store/hooks';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBars, faCaretRight } from '@fortawesome/free-solid-svg-icons';
 import { createContext, useContext, useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { Modal } from '~/components/Modal';
 import { getLyricSongById, login } from '~/service';
 import { Player } from '~/pages/Player';
@@ -17,9 +17,12 @@ import { getUser } from '~/service/userService';
 const cx = classNames.bind(styles);
 
 export const DefaultContext = createContext();
+const getLyricLineFromArrayWords = (words) => {
+    return words.map((word) => word.data).join(' ');
+};
 
 function DefaultLayout({ children, setProgress }) {
-    const [state, dispatch] = useStore();
+    const [state] = useStore();
     const { currentSong, currentAudio, isPlaying } = state;
     const [openLyric, setOpenLyric] = useState(true);
     const [lyricLine, setLyricLine] = useState();
@@ -30,14 +33,23 @@ function DefaultLayout({ children, setProgress }) {
     const { previousPath } = useContext(HistoryContext);
     const [dataUser, setDateUser] = useState();
     const [token, setToken] = useState();
+    const location = useLocation();
+    const isPlayerPath = location.pathname.includes('/player');
+
     useEffect(() => {
+        let canceled = false;
+
         const fetch = async () => {
             const res = await getUser();
-            setDateUser(res.data);
+            if (!canceled) setDateUser(res?.data);
         };
 
         fetch();
-    }, [token, window.location.pathname + window.location.search]);
+
+        return () => {
+            canceled = true;
+        };
+    }, [token, location.pathname, location.search]);
 
     const show = () => setOpen(true);
 
@@ -45,54 +57,84 @@ function DefaultLayout({ children, setProgress }) {
         setSidebarState((prev) => !prev);
     };
 
-    const getLyricLineFromArrayWords = (words) => {
-        return words.map((word) => word.data).join(' ');
-    };
-
     useEffect(() => {
         if (
             !previousPath &&
             !openPlayer &&
-            window.location.pathname.includes('/player')
+            isPlayerPath
         ) {
             setOpenPlayer(true);
         }
-    }, [previousPath, window.location.pathname]);
+    }, [previousPath, openPlayer, isPlayerPath]);
 
     useEffect(() => {
         document.body.style.overflow = openPlayer ? 'hidden' : 'auto';
+
+        return () => {
+            document.body.style.overflow = 'auto';
+        };
     }, [openPlayer]);
 
     useEffect(() => {
+        if (!currentSong?.encodeId || !currentAudio) {
+            setLyricLine();
+            return;
+        }
+
+        let canceled = false;
+        let removeListener = () => {};
+
         const fetch = async () => {
             const res = await getLyricSongById(currentSong?.encodeId);
-            if (currentAudio) {
-                currentAudio.addEventListener('timeupdate', () => {
-                    res?.data?.sentences?.forEach((sentence) => {
-                        const active =
-                            currentAudio.currentTime * 1000 >=
-                                sentence?.words[0]?.startTime &&
-                            currentAudio.currentTime * 1000 <=
-                                sentence?.words[sentence?.words?.length - 1]
-                                    ?.endTime;
-                        if (active) {
-                            setLyricLine(
-                                getLyricLineFromArrayWords(sentence?.words),
-                            );
-                        }
-                    });
+            const sentences = res?.data?.sentences ?? [];
+            if (canceled || sentences.length === 0) return;
+
+            let lastLine = '';
+            const handleTimeUpdate = () => {
+                const currentTime = currentAudio.currentTime * 1000;
+                const activeSentence = sentences.find((sentence) => {
+                    const firstWord = sentence?.words?.[0];
+                    const lastWord =
+                        sentence?.words?.[sentence?.words?.length - 1];
+
+                    return (
+                        firstWord &&
+                        lastWord &&
+                        currentTime >= firstWord.startTime &&
+                        currentTime <= lastWord.endTime
+                    );
                 });
-            }
+
+                if (!activeSentence) return;
+
+                const nextLine = getLyricLineFromArrayWords(
+                    activeSentence.words,
+                );
+                if (nextLine !== lastLine) {
+                    lastLine = nextLine;
+                    setLyricLine(nextLine);
+                }
+            };
+
+            currentAudio.addEventListener('timeupdate', handleTimeUpdate);
+            handleTimeUpdate();
+            removeListener = () =>
+                currentAudio.removeEventListener('timeupdate', handleTimeUpdate);
         };
 
         fetch();
-    }, [currentSong, currentAudio]);
+
+        return () => {
+            canceled = true;
+            removeListener();
+        };
+    }, [currentSong?.encodeId, currentAudio]);
 
     useEffect(() => {
-        if (openPlayer && !window.location.pathname.includes('/player')) {
+        if (openPlayer && !isPlayerPath) {
             setOpenPlayer(false);
         }
-    }, [window.location.pathname]);
+    }, [openPlayer, isPlayerPath]);
 
     useEffect(() => {
         if (currentSong && isPlaying) {

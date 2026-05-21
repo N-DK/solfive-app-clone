@@ -66,26 +66,19 @@ const RoutesComponent = ({ setProgress }) => {
     useEffect(() => {
         if (!location.pathname.includes('/player')) {
             setPreviousPath(location.pathname + location.search);
-            console.log();
         }
-    }, [location.pathname]);
+    }, [location.pathname, location.search, setPreviousPath]);
 
     return (
         <Routes>
             {publicRoutes.map((route, index) => {
                 const Layout = DefaultLayout;
+                const previousRoute = previousPath?.includes('?')
+                    ? previousPath.substring(0, previousPath.indexOf('?'))
+                    : previousPath;
                 const Page = !location.pathname.includes('/player')
                     ? route.component
-                    : previousPath
-                    ? components[
-                          previousPath.includes('?')
-                              ? previousPath?.substring(
-                                    0,
-                                    previousPath?.indexOf('?'),
-                                )
-                              : previousPath
-                      ]
-                    : components['/'];
+                    : components[previousRoute] || components['/'];
                 return (
                     <Route
                         exact

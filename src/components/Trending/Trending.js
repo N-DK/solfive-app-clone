@@ -13,6 +13,7 @@ const TrendingItem = () => {
                     className={`w-80 h-44 mr-6 rounded flex justify-center items-center overflow-hidden cursor-pointer`}
                 >
                     <img
+                        alt="Thịnh hành"
                         className="w-full h-full"
                         src="https://photo-zmp3.zmdcdn.me/banner/e/0/e/5/e0e5e9a36cf8d9d3c92957c339ce533b.jpg"
                     />

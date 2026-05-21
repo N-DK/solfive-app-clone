@@ -18,7 +18,7 @@ import {
     faVolumeMute,
 } from '@fortawesome/free-solid-svg-icons';
 import { useNavigate } from 'react-router-dom';
-import { useContext, useEffect, useRef, useState } from 'react';
+import { useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { useStore } from '~/store/hooks';
 import { pauseSong, playSong, setPlaylist } from '~/store/actions';
 import { dropHeart, getSoundSongById } from '~/service';
@@ -55,9 +55,10 @@ function Footer() {
     const [timeSong, setTimeSong] = useState();
     const [visible, setVisible] = useState(false);
     const [isMute, setIsMute] = useState(false);
-    const [isRequestInProgress, setIsRequestInProgress] = useState(false);
     const rangeRef = useRef(null);
     const volumeRef = useRef(null);
+    const lastVolumeRef = useRef(1);
+    const requestInProgressRef = useRef(false);
     const {
         openModal,
         loading,
@@ -73,94 +74,129 @@ function Footer() {
     const show = () => setVisible(true);
     const hide = () => setVisible(false);
 
-    const getIndexSongInPlaylist = (currentSong) => {
-        return playlist?.findIndex((song) => {
-            return song.encodeId === currentSong.encodeId;
-        });
-    };
+    const getIndexSongInPlaylist = useCallback(
+        (songCheck) => {
+            if (!Array.isArray(playlist) || !songCheck?.encodeId) return -1;
+
+            return playlist.findIndex((song) => {
+                return song.encodeId === songCheck.encodeId;
+            });
+        },
+        [playlist],
+    );
 
     useEffect(() => {
         setLike(isExistFavoriteSongs(dataUser, currentSong));
-    }, [currentSong]);
+    }, [currentSong, dataUser]);
 
     const getFavoriteSongById = (data) => {
-        const item = dataUser?.favoriteList?.song?.items.find(
+        const item = dataUser?.favoriteList?.song?.items?.find(
             (song) => song.encodeId === data?.encodeId,
         );
-        item.artists = data?.artists?.map((artist) => ({ name: artist?.name }));
-        item.is_liked = 0;
-        return item;
+
+        return {
+            ...(item ?? data),
+            artists: data?.artists?.map((artist) => ({ name: artist?.name })),
+            is_liked: 0,
+        };
     };
 
     const handleLike = () => {
         const payload = like ? getFavoriteSongById(currentSong) : currentSong;
         const fetch = async () => {
-            const res = await dropHeart(payload);
+            await dropHeart(payload);
         };
 
         setLike(!like);
         fetch();
     };
 
-    const handleNavigatorSong = (type) => {
-        const handle = async () => {
-            if (isRequestInProgress) return;
-            setIsRequestInProgress(true);
-            setLoading(true);
-            const index = getIndexSongInPlaylist(currentSong);
-            var res;
-            var song;
-            var i = 1;
-            if (index + type >= 0 && index + type < playlist.length) {
-                handlePause();
-                song = playlist[index + type];
-                if (window.location.pathname.includes('/player')) {
-                    navigate(
-                        `/player?id=${song?.encodeId}&listId=${
-                            playListId ?? song?.album?.encodeId
-                        }`,
-                    );
-                }
-                while (!res && index + type + i < playlist.length) {
-                    res = await getSoundSongById(song?.encodeId);
-                    if (!res) {
-                        song = playlist[index + type + i];
-                        i++;
-                    }
-                }
-                if (res) {
-                    const URL = res?.data['128'];
-                    var audio = new Audio(URL);
-                    if (currentAudio.paused) {
-                        dispatch(
-                            playSong({
-                                audio,
-                                song,
-                                playListId,
-                                playlist,
-                            }),
-                        );
-                        const playPromise = audio.play();
-                        setLoading(false);
-                        if (playPromise !== null) {
-                            playPromise.catch(() => {
-                                audio.play();
-                            });
-                        }
-                    }
-                }
+    const handlePause = useCallback(() => {
+        if (!currentAudio) return;
+
+        dispatch(pauseSong(currentAudio));
+        currentAudio.pause();
+    }, [currentAudio, dispatch]);
+
+    const handleNavigatorSong = useCallback(
+        async (type) => {
+            if (
+                requestInProgressRef.current ||
+                !currentSong ||
+                !Array.isArray(playlist)
+            ) {
+                return;
             }
-            setIsRequestInProgress(false);
-        };
-        handle();
-    };
+
+            const index = getIndexSongInPlaylist(currentSong);
+            if (index < 0) return;
+
+            requestInProgressRef.current = true;
+            setLoading(true);
+
+            try {
+                currentAudio?.pause();
+
+                for (
+                    let nextIndex = index + type;
+                    nextIndex >= 0 && nextIndex < playlist.length;
+                    nextIndex += type
+                ) {
+                    const song = playlist[nextIndex];
+                    const res = await getSoundSongById(song?.encodeId);
+                    const URL = res?.data?.['128'];
+                    if (!URL) continue;
+
+                    const audio = new Audio(URL);
+                    const nextPlayListId = playListId ?? song?.album?.encodeId;
+
+                    dispatch(
+                        playSong({
+                            audio,
+                            song,
+                            playListId: nextPlayListId,
+                            playlist,
+                        }),
+                    );
+
+                    if (window.location.pathname.includes('/player')) {
+                        navigate(
+                            `/player?id=${song?.encodeId}&listId=${nextPlayListId}`,
+                        );
+                    }
+
+                    const playPromise = audio.play();
+                    if (playPromise !== null) {
+                        playPromise.catch(() => {});
+                    }
+                    return;
+                }
+
+                handlePause();
+            } finally {
+                setLoading(false);
+                requestInProgressRef.current = false;
+            }
+        },
+        [
+            currentAudio,
+            currentSong,
+            dispatch,
+            getIndexSongInPlaylist,
+            handlePause,
+            navigate,
+            playListId,
+            playlist,
+            setLoading,
+        ],
+    );
 
     const handleDownload = (title) => {
-        // setDownloading(true);
-        console.log('Đang chuẩn bị file');
         const fetch = async () => {
             const res = await getSoundSongById(currentSong?.encodeId);
-            const url = res.data['128'];
+            const url = res?.data?.['128'];
+            if (!url) return;
+
             axios({
                 url,
                 method: 'GET',
@@ -168,8 +204,6 @@ function Footer() {
             }).then((response) => {
                 const blob = new Blob([response.data], { type: 'audio/mp3' });
                 saveAs(blob, title + '.mp3');
-                console.log('Đã hoàn tất');
-                // setDownloading(false);
             });
         };
 
@@ -178,6 +212,8 @@ function Footer() {
 
     const handlePlay = (e) => {
         e.stopPropagation();
+        if (!currentAudio || !currentSong) return;
+
         dispatch(
             playSong({
                 audio: currentAudio,
@@ -186,15 +222,15 @@ function Footer() {
                 playlist,
             }),
         );
-        if (currentAudio.paused) currentAudio.play();
-    };
-
-    const handlePause = () => {
-        dispatch(pauseSong(currentAudio));
-        if (currentAudio.played) currentAudio.pause();
+        if (currentAudio.paused) {
+            const playPromise = currentAudio.play();
+            if (playPromise !== null) playPromise.catch(() => {});
+        }
     };
 
     const handleOpenPlayer = () => {
+        if (!currentSong) return;
+
         if (!openPlayer) {
             if (playListId) {
                 navigate(
@@ -211,7 +247,7 @@ function Footer() {
     };
 
     useEffect(() => {
-        if (rangeRef && timeSong) {
+        if (rangeRef.current && timeSong) {
             const valPercent =
                 (rangeRef.current.value / rangeRef.current.max) * 100;
             rangeRef.current.style.background = `linear-gradient(to right, #67b9f9 ${valPercent}%, #515151 ${valPercent}%)`;
@@ -219,41 +255,49 @@ function Footer() {
     }, [timeSong]);
 
     useEffect(() => {
-        if (volumeRef) {
+        if (volumeRef.current) {
             const valPercent =
                 (volumeRef.current.value / volumeRef.current.max) * 100;
             volumeRef.current.style.background = `linear-gradient(to right, #67b9f9 ${valPercent}%, #515151 ${valPercent}%)`;
         }
-    }, [currentAudio.volume]);
+    }, [volume]);
 
     useEffect(() => {
         setIsMute(volume === 0);
     }, [volume]);
 
     useEffect(() => {
-        if (currentSong && currentAudio) {
-            currentAudio.volume = volume;
-            const handleTimeUpdate = () => {
-                setTimeSong(currentAudio.currentTime);
-            };
-            currentAudio.addEventListener('timeupdate', handleTimeUpdate);
-            return () => {
-                currentAudio.removeEventListener(
-                    'timeupdate',
-                    handleTimeUpdate,
-                );
-            };
-        }
-    }, [currentSong, currentAudio]);
+        if (currentAudio) currentAudio.volume = volume;
+    }, [currentAudio, volume]);
+
+    useEffect(() => {
+        if (!currentAudio) return;
+
+        const handleTimeUpdate = () => {
+            setTimeSong(currentAudio.currentTime);
+        };
+
+        currentAudio.addEventListener('timeupdate', handleTimeUpdate);
+        handleTimeUpdate();
+
+        return () => {
+            currentAudio.removeEventListener('timeupdate', handleTimeUpdate);
+        };
+    }, [currentAudio]);
 
     useEffect(() => {
         const handleAudioEnd = () => {
+            if (!currentAudio || !currentSong || !Array.isArray(playlist)) {
+                return;
+            }
+
             if (isRepeat) {
-                currentAudio.play();
+                const playPromise = currentAudio.play();
+                if (playPromise !== null) playPromise.catch(() => {});
             } else {
                 if (
                     currentSong.encodeId ===
-                    playlist[playlist.length - 1].encodeId
+                    playlist[playlist.length - 1]?.encodeId
                 ) {
                     handlePause();
                 } else {
@@ -262,21 +306,36 @@ function Footer() {
             }
         };
 
-        if (currentSong) {
-            currentAudio?.addEventListener('ended', handleAudioEnd);
-            return () => {
-                currentAudio.removeEventListener('ended', handleAudioEnd);
-            };
-        }
-    }, [isRepeat, currentAudio, currentSong]);
+        if (!currentAudio) return;
 
-    useEffect(() => {
-        if (isShuffle) {
-            const songsTemp = [...playlist];
-            const playListShuffled = shufflePlaylist(songsTemp, currentSong);
-            dispatch(setPlaylist(playListShuffled));
-        }
-    }, [isShuffle]);
+        currentAudio.addEventListener('ended', handleAudioEnd);
+        return () => {
+            currentAudio.removeEventListener('ended', handleAudioEnd);
+        };
+    }, [
+        currentAudio,
+        currentSong,
+        handleNavigatorSong,
+        handlePause,
+        isRepeat,
+        playlist,
+    ]);
+
+    const handleToggleShuffle = () => {
+        setIsShuffle((prev) => {
+            const nextValue = !prev;
+            if (nextValue && playlist?.length) {
+                const songsTemp = [...playlist];
+                const playListShuffled = shufflePlaylist(
+                    songsTemp,
+                    currentSong,
+                );
+                dispatch(setPlaylist(playListShuffled));
+            }
+
+            return nextValue;
+        });
+    };
 
     return (
         <div
@@ -341,6 +400,7 @@ function Footer() {
                 <div className={` flex items-center flex-1 justify-center`}>
                     <div className={`rounded overflow-hidden w-11 h-11 mr-3`}>
                         <img
+                            alt={currentSong.title ?? ''}
                             className="w-full h-full"
                             src={currentSong.thumbnailM}
                         />
@@ -392,9 +452,11 @@ function Footer() {
                                 icon: faUser,
                                 handle: (e) => {
                                     e.stopPropagation();
-                                    navigate(
-                                        `/artist?id=${currentSong.artists[0].alias}`,
-                                    );
+                                    const artistAlias =
+                                        currentSong.artists?.[0]?.alias;
+                                    if (artistAlias) {
+                                        navigate(`/artist?id=${artistAlias}`);
+                                    }
                                 },
                             },
                             {
@@ -438,23 +500,35 @@ function Footer() {
                             type="range"
                             min={0}
                             max={100}
-                            value={currentAudio.volume * 100}
+                            value={(currentAudio?.volume ?? volume) * 100}
                             onClick={(e) => e.stopPropagation()}
                             onChange={(e) => {
-                                setVolume(e.target.value / 100);
-                                currentAudio.volume = e.target.value / 100;
+                                const nextVolume = e.target.value / 100;
+                                setVolume(nextVolume);
+                                if (nextVolume > 0) {
+                                    lastVolumeRef.current = nextVolume;
+                                }
+                                if (currentAudio) {
+                                    currentAudio.volume = nextVolume;
+                                }
                             }}
                         />
                         <button
                             onClick={(e) => {
                                 e.stopPropagation();
-                                currentAudio.volume =
+                                if (!currentAudio) return;
+
+                                const nextVolume =
                                     currentAudio.volume === 0
-                                        ? volume === 0
-                                            ? 0.7
-                                            : volume
+                                        ? lastVolumeRef.current || 0.7
                                         : 0;
-                                setIsMute(currentAudio.volume === 0);
+                                if (currentAudio.volume > 0) {
+                                    lastVolumeRef.current =
+                                        currentAudio.volume;
+                                }
+                                currentAudio.volume = nextVolume;
+                                setVolume(nextVolume);
+                                setIsMute(nextVolume === 0);
                             }}
                             className="ml-2 rounded-full w-10 h-10 text--primary-color text-xl flex justify-center items-center mr-3 "
                         >
@@ -480,7 +554,7 @@ function Footer() {
                     <button
                         onClick={(e) => {
                             e.stopPropagation();
-                            setIsShuffle((prev) => !prev);
+                            handleToggleShuffle();
                         }}
                         className="rounded-full w-10 h-10 text--primary-color text-xl flex justify-center items-center mr-3"
                     >
@@ -522,8 +596,10 @@ function Footer() {
                         e.stopPropagation();
                     }}
                     onChange={(e) => {
+                        if (!currentAudio?.duration) return;
+
                         currentAudio.currentTime =
-                            (currentAudio?.duration * e.target.value) / 100;
+                            (currentAudio.duration * e.target.value) / 100;
                     }}
                 />
             </div>

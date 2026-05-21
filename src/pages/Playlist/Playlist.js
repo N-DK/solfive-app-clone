@@ -14,7 +14,7 @@ import { convertSeconds } from '~/utils';
 import { MenuDetails } from '~/components/MenuDetails';
 import { useStore } from '~/store/hooks';
 import { playSong } from '~/store/actions';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { DefaultContext } from '~/components/layouts/DefaultLayout/DefaultLayout';
 import { Undefined } from '~/components/Undefined';
 import { HistoryContext } from '~/components/HistoryProvider';
@@ -30,11 +30,12 @@ function Playlist() {
 
     const [data, setData] = useState([]);
     const [visible, setVisible] = useState(false);
+    const location = useLocation();
     const navigator = useNavigate();
     const [state, dispatch] = useStore();
     const [undefine, setUndefine] = useState(false);
     const { currentAudio, currentSong } = state;
-    const { setLoading, setProgress, dataUser, setOpenPlayer } =
+    const { setLoading, setProgress, setOpenPlayer } =
         useContext(DefaultContext);
     const { previousPath } = useContext(HistoryContext);
 
@@ -44,50 +45,56 @@ function Playlist() {
     const handlePlayRandom = () => {
         const fetch = async () => {
             setLoading(true);
-            const playlist = await getPlaylistById(id);
-            const songs = playlist?.data?.song?.items;
-            const data = songs[Math.floor(Math.random() * songs.length)];
-            const res = await getSoundSongById(data.encodeId);
-            const URL = res.data['128'];
+            try {
+                const playlist = await getPlaylistById(id);
+                const songs = playlist?.data?.song?.items;
+                if (!songs?.length) return;
 
-            var audio = new Audio(URL);
+                const data = songs[Math.floor(Math.random() * songs.length)];
+                const res = await getSoundSongById(data.encodeId);
+                const URL = res?.data?.['128'];
+                if (!URL) return;
 
-            if (currentAudio) {
-                if (data.encodeId === currentSong.encodeId) {
-                    audio = currentAudio;
-                } else {
-                    currentAudio.pause();
+                var audio = new Audio(URL);
+
+                if (currentAudio) {
+                    if (data.encodeId === currentSong?.encodeId) {
+                        audio = currentAudio;
+                    } else {
+                        currentAudio.pause();
+                    }
                 }
-            }
-            dispatch(
-                playSong({
-                    audio,
-                    song: data,
-                    playListId: id,
-                    playlist: songs,
-                }),
-            );
-            if (currentAudio?.paused || !currentAudio) {
-                const playPromise = audio.play();
-                if (playPromise !== null) {
-                    playPromise.catch(() => {
-                        audio.play();
-                    });
+                dispatch(
+                    playSong({
+                        audio,
+                        song: data,
+                        playListId: id,
+                        playlist: songs,
+                    }),
+                );
+                if (currentAudio?.paused || !currentAudio) {
+                    const playPromise = audio.play();
+                    if (playPromise !== null) playPromise.catch(() => {});
                 }
+                navigator(`/player?id=${data.encodeId}&listId=${id}`);
+                setOpenPlayer(true);
+            } finally {
+                setLoading(false);
             }
-            navigator(`/player?id=${data.encodeId}&listId=${id}`);
-            setOpenPlayer(true);
-            setLoading(false);
         };
         fetch();
     };
 
     useEffect(() => {
+        let canceled = false;
+
         const fetch = async () => {
             setProgress(10);
             setProgress(40);
             setProgress(70);
             const res = await getPlaylistById(id);
+            if (canceled) return;
+
             setUndefine(res ? false : true);
             setData(res?.data);
             setProgress(100);
@@ -95,13 +102,17 @@ function Playlist() {
         if (
             id &&
             !(
-                window.location.pathname + window.location.search ===
+                location.pathname + location.search ===
                 previousPath
             )
         ) {
             fetch();
         }
-    }, [id]);
+
+        return () => {
+            canceled = true;
+        };
+    }, [id, location.pathname, location.search, previousPath, setProgress]);
 
     return (
         <>
@@ -114,6 +125,7 @@ function Playlist() {
                             >
                                 {data?.thumbnailM ? (
                                     <img
+                                        alt={data?.title ?? ''}
                                         className="w-full h-full"
                                         src={data?.thumbnailM}
                                     />
@@ -124,6 +136,7 @@ function Playlist() {
                                             className={`w-32 h-32`}
                                         >
                                             <img
+                                                alt={item?.title ?? ''}
                                                 className="w-full h-full object-contain"
                                                 src={item.thumbnailM}
                                             ></img>

@@ -45,55 +45,73 @@ function SongItem({ data, size = 'large', playListId }) {
         }
     }, [currentSong]);
 
+    useEffect(() => {
+        setLike(isExistFavoriteSongs(dataUser, data));
+    }, [data, dataUser]);
+
     const handlePlaySong = () => {
         const fetch = async () => {
             var audio;
             var songs;
-            var URL;
-            if (window.location.pathname.includes('/player')) {
-                navigator(
-                    `/player?id=${data.encodeId}&listId=${
-                        playListId ?? listId ?? data?.album?.encodeId
-                    }`,
+            const nextPlayListId = playListId ?? listId ?? data?.album?.encodeId;
+
+            try {
+                if (window.location.pathname.includes('/player')) {
+                    navigator(
+                        `/player?id=${data.encodeId}&listId=${nextPlayListId}`,
+                    );
+                }
+
+                if (data.encodeId !== currentSong?.encodeId) {
+                    setLoading(true);
+                    const [res, playlist] = await Promise.all([
+                        getSoundSongById(data.encodeId),
+                        nextPlayListId
+                            ? getPlaylistById(nextPlayListId)
+                            : Promise.resolve(null),
+                    ]);
+                    const URL = res?.data?.['128'];
+                    if (!URL) return;
+
+                    songs = playlist?.data?.song?.items;
+                    audio = new Audio(URL);
+                }
+
+                if (currentAudio) {
+                    if (data.encodeId === currentSong?.encodeId) {
+                        audio = currentAudio;
+                    } else {
+                        currentAudio.pause();
+                    }
+                }
+
+                if (!audio) return;
+
+                dispatch(
+                    playSong({
+                        audio,
+                        song: data,
+                        playListId: nextPlayListId,
+                        playlist: songs,
+                    }),
                 );
-            }
-            if (data.encodeId !== currentSong?.encodeId) {
-                setLoading(true);
-                const res = await getSoundSongById(data.encodeId);
-                const playlist = await getPlaylistById(playListId ?? listId);
-                songs = playlist?.data?.song?.items;
-                URL = res?.data['128'];
-                audio = new Audio(URL);
-            }
-            if (currentAudio) {
-                if (data.encodeId === currentSong.encodeId) {
-                    audio = currentAudio;
-                } else {
-                    currentAudio.pause();
+
+                if (currentAudio?.paused || !currentAudio) {
+                    const playPromise = audio.play();
+                    if (playPromise !== null) {
+                        playPromise.catch(() => {});
+                    }
                 }
-            }
-            dispatch(
-                playSong({
-                    audio,
-                    song: data,
-                    playListId: playListId ?? listId,
-                    playlist: songs,
-                }),
-            );
-            if (currentAudio?.paused || !currentAudio) {
-                const playPromise = audio.play();
+            } finally {
                 setLoading(false);
-                if (playPromise !== null) {
-                    playPromise.catch(() => {
-                        audio.play();
-                    });
-                }
             }
         };
         fetch();
     };
 
     const handlePauseSong = () => {
+        if (!currentAudio) return;
+
         dispatch(pauseSong(currentAudio));
         if (isPlaying) {
             currentAudio.pause();
@@ -101,18 +119,21 @@ function SongItem({ data, size = 'large', playListId }) {
     };
 
     const getFavoriteSongById = (data) => {
-        const item = dataUser.favoriteList.song.items.find(
+        const item = dataUser?.favoriteList?.song?.items?.find(
             (song) => song.encodeId === data?.encodeId,
         );
-        item.artists = data?.artists?.map((artist) => ({ name: artist.name }));
-        item.is_liked = 0;
-        return item;
+
+        return {
+            ...(item ?? data),
+            artists: data?.artists?.map((artist) => ({ name: artist.name })),
+            is_liked: 0,
+        };
     };
 
     const handleLike = () => {
         const payload = like ? getFavoriteSongById(data) : data;
         const fetch = async () => {
-            const res = await dropHeart(payload);
+            await dropHeart(payload);
         };
 
         setLike(!like);
@@ -120,11 +141,11 @@ function SongItem({ data, size = 'large', playListId }) {
     };
 
     const handleDownload = (title) => {
-        // setDownloading(true);
-        console.log('Đang chuẩn bị file');
         const fetch = async () => {
             const res = await getSoundSongById(data?.encodeId);
-            const url = res.data['128'];
+            const url = res?.data?.['128'];
+            if (!url) return;
+
             axios({
                 url,
                 method: 'GET',
@@ -132,8 +153,6 @@ function SongItem({ data, size = 'large', playListId }) {
             }).then((response) => {
                 const blob = new Blob([response.data], { type: 'audio/mp3' });
                 saveAs(blob, title + '.mp3');
-                console.log('Đã hoàn tất');
-                // setDownloading(false);
             });
         };
 
@@ -165,6 +184,7 @@ function SongItem({ data, size = 'large', playListId }) {
                     <div className={`flex items-center `}>
                         <div className="w-10 h-10 rounded overflow-hidden mr-2 relative">
                             <img
+                                alt={data?.title ?? ''}
                                 className="w-full h-full object-cover"
                                 src={data.thumbnail}
                             />

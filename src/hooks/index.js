@@ -1,8 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 
 const useQuery = () => {
-    return new URLSearchParams(useLocation().search);
+    const { search } = useLocation();
+
+    return useMemo(() => new URLSearchParams(search), [search]);
 };
 
 const useDebounce = (value, delay) => {
@@ -11,7 +13,7 @@ const useDebounce = (value, delay) => {
     useEffect(() => {
         const handler = setTimeout(() => setDebouncedValue(value), delay);
         return () => clearTimeout(handler);
-    }, [value]);
+    }, [value, delay]);
 
     return debouncedValue;
 };

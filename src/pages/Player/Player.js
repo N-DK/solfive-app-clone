@@ -31,7 +31,6 @@ function NextInPlayList({ data, songs }) {
     const [state, dispatch] = useStore();
     const [initPlaylist, setInitPlaylist] = useState(songs);
     const { currentSong, playlist } = state;
-    const { dataUser } = useContext(DefaultContext);
     const getIndexSongInPlaylist = (currentSong) => {
         return initPlaylist?.findIndex((song) => {
             return song?.encodeId === currentSong?.encodeId;
@@ -117,42 +116,70 @@ function NextInPlayList({ data, songs }) {
 }
 
 const Lyric = ({ data }) => {
-    const [state, dispatch] = useStore();
-    const { currentAudio, currentSong } = state;
-    const [timeSong, setTimeSong] = useState();
+    const [state] = useStore();
+    const { currentAudio } = state;
+    const [activeSentenceIndex, setActiveSentenceIndex] = useState(null);
     const lyricActiveRef = useRef(null);
 
     useEffect(() => {
         if (lyricActiveRef) {
-            lyricActiveRef?.current?.scrollIntoView({ behavior: 'smooth' });
-        }
-    }, [timeSong]);
-
-    useEffect(() => {
-        if (currentAudio) {
-            currentAudio.addEventListener('timeupdate', () => {
-                setTimeSong(currentAudio.currentTime);
+            lyricActiveRef?.current?.scrollIntoView({
+                behavior: 'smooth',
+                block: 'center',
             });
         }
-    }, [currentSong, currentAudio]);
+    }, [activeSentenceIndex]);
+
+    useEffect(() => {
+        const sentences = data?.sentences ?? [];
+        if (!currentAudio || sentences.length === 0) {
+            setActiveSentenceIndex(null);
+            return;
+        }
+
+        let lastIndex = null;
+        const handleTimeUpdate = () => {
+            const currentTime = currentAudio.currentTime * 1000;
+            const nextIndex = sentences.findIndex((sentence) => {
+                const firstWord = sentence?.words?.[0];
+                const lastWord =
+                    sentence?.words?.[sentence?.words?.length - 1];
+
+                return (
+                    firstWord &&
+                    lastWord &&
+                    currentTime >= firstWord.startTime &&
+                    currentTime <= lastWord.endTime
+                );
+            });
+
+            if (nextIndex !== lastIndex) {
+                lastIndex = nextIndex;
+                setActiveSentenceIndex(nextIndex);
+            }
+        };
+
+        currentAudio.addEventListener('timeupdate', handleTimeUpdate);
+        handleTimeUpdate();
+
+        return () => {
+            currentAudio.removeEventListener('timeupdate', handleTimeUpdate);
+        };
+    }, [currentAudio, data?.sentences]);
 
     return (
         <div className={`${cx('list-results')} mt-4`}>
             <div className="text-white leading-8">
-                {chunkArray(data?.sentences, 8).map((data, index) => (
-                    <div key={index} className="pb-7">
+                {chunkArray(data?.sentences, 8).map((data, groupIndex) => (
+                    <div key={groupIndex} className="pb-7">
                         {data?.map((sentence, index) => {
-                            const active =
-                                timeSong * 1000 >=
-                                    sentence?.words[0]?.startTime &&
-                                timeSong * 1000 <=
-                                    sentence?.words[sentence?.words?.length - 1]
-                                        ?.endTime;
+                            const sentenceIndex = groupIndex * 8 + index;
+                            const active = sentenceIndex === activeSentenceIndex;
 
                             return (
                                 <p
                                     ref={active ? lyricActiveRef : null}
-                                    key={index}
+                                    key={sentenceIndex}
                                     className={`${cx(
                                         `${active ? 'active-lyric' : ''}`,
                                     )}`}
@@ -292,9 +319,11 @@ function Player() {
     const [song, setSong] = useState();
     const [state, dispatch] = useStore();
 
-    const { currentSong, playlist, currentAudio, isPlaying } = state;
+    const { currentSong, playlist, currentAudio } = state;
     const tabFirst = useRef(null);
     const line = useRef(null);
+    const currentAudioRef = useRef(currentAudio);
+    const currentSongRef = useRef(currentSong);
 
     const query = useQuery();
     const id = query.get('id');
@@ -302,43 +331,69 @@ function Player() {
     const { openPlayer, setOpenPlayer } = useContext(DefaultContext);
     const [initListId, setInitListId] = useState(listId);
 
-    useState(() => {
+    useEffect(() => {
+        currentAudioRef.current = currentAudio;
+        currentSongRef.current = currentSong;
+    }, [currentAudio, currentSong]);
+
+    useEffect(() => {
+        let canceled = false;
+
         const fetch = async () => {
-            const songRes = await getSongById(id);
-            const res = await getSoundSongById(id);
-            const playlist = await getPlaylistById(listId);
-            const song = songRes.data;
-            const songs = playlist?.data?.song?.items;
-            const URL = res?.data['128'];
+            if (!id) return;
 
-            var audio = new Audio(URL);
+            const activeAudio = currentAudioRef.current;
+            const activeSong = currentSongRef.current;
+            const shouldReuseAudio = activeAudio && id === activeSong?.encodeId;
 
-            if (currentAudio) {
-                if (id === currentSong.encodeId) {
-                    audio = currentAudio;
-                } else {
-                    currentAudio.pause();
-                }
+            const [songRes, soundRes, playlistRes] = await Promise.all([
+                getSongById(id),
+                shouldReuseAudio
+                    ? Promise.resolve(null)
+                    : getSoundSongById(id),
+                listId ? getPlaylistById(listId) : Promise.resolve(null),
+            ]);
+
+            if (canceled) return;
+
+            const song = songRes?.data;
+            const songs = playlistRes?.data?.song?.items;
+            const URL = shouldReuseAudio
+                ? activeAudio?.src
+                : soundRes?.data?.['128'];
+            if (!song || !URL) return;
+
+            var audio = shouldReuseAudio ? activeAudio : new Audio(URL);
+
+            if (activeAudio && !shouldReuseAudio) {
+                activeAudio.pause();
             }
             dispatch(
                 playSong({
                     audio,
                     song,
-                    playListId: listId,
+                    playListId: listId ?? song?.album?.encodeId,
                     playlist: songs,
                 }),
             );
             if (audio.paused) dispatch(pauseSong(audio));
         };
+
         fetch();
-    }, []);
+
+        return () => {
+            canceled = true;
+        };
+    }, [dispatch, id, listId]);
 
     useEffect(() => {
         if (!openPlayer) setOpenPlayer(true);
-    }, []);
+    }, [openPlayer, setOpenPlayer]);
 
     useEffect(() => {
         const fetch = async () => {
+            if (!initListId) return;
+
             setLoading(true);
             const res = await getPlaylistById(initListId);
             dispatch(setPlaylist(res?.data?.song?.items));
@@ -346,7 +401,7 @@ function Player() {
             setLoading(false);
         };
         fetch();
-    }, [initListId]);
+    }, [dispatch, initListId]);
 
     useEffect(() => {
         setInitListId(listId);
@@ -354,24 +409,27 @@ function Player() {
 
     useEffect(() => {
         const fetchLyric = async () => {
+            if (!id) return;
+
             const res = await getLyricSongById(id);
             setDataLyric(res?.data);
         };
         const fetchSong = async () => {
+            if (!id) return;
+
             const res = await getSongById(id);
             setSong(res?.data);
-            if (!initListId) setInitListId(res?.data?.album?.encodeId);
+            setInitListId((prevListId) => prevListId ?? res?.data?.album?.encodeId);
         };
         fetchLyric();
         fetchSong();
     }, [id]);
 
     useEffect(() => {
-        if (
-            (component === 2 && song?.encodeId !== currentSong?.encodeId) ||
-            (!dataArtist && component === 2)
-        ) {
-            const artist = song?.artists[0];
+        if (component === 2 && song) {
+            const artist = song?.artists?.[0];
+            if (!artist || dataArtist?.alias === artist.alias) return;
+
             const fetch = async () => {
                 setLoading(true);
                 const artistResult = await getArtistById(artist?.alias);
@@ -385,7 +443,7 @@ function Player() {
 
             fetch();
         }
-    }, [component, song]);
+    }, [component, dataArtist?.alias, song]);
 
     useEffect(() => {
         if (tabActive && line.current) {
@@ -412,7 +470,11 @@ function Player() {
                         }}
                         className={`mt-11`}
                     >
-                        <img className="w-full" src={song?.thumbnailM} />
+                        <img
+                            alt={song?.title ?? ''}
+                            className="w-full"
+                            src={song?.thumbnailM}
+                        />
                     </div>
                     <div className=" absolute flex items-center justify-center w-full h-full top-0 left-0">
                         <div
@@ -421,6 +483,7 @@ function Player() {
                             )} h-1/2 rounded overflow-hidden`}
                         >
                             <img
+                                alt={song?.title ?? ''}
                                 className="h-full w-full"
                                 src={song?.thumbnailM}
                             />

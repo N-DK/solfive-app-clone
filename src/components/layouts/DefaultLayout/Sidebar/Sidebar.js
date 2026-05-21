@@ -1,9 +1,9 @@
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import styles from './Sidebar.module.scss';
 import classNames from 'classnames/bind';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faThumbTack } from '@fortawesome/free-solid-svg-icons';
-import { useContext, useEffect, useState } from 'react';
+import { useContext } from 'react';
 import { DefaultContext } from '../DefaultLayout';
 import {
     ExploreIcon,
@@ -38,11 +38,9 @@ const paths = [
 ];
 
 function Sidebar({ sidebarState }) {
-    const [path, setPath] = useState(window.location.pathname);
     const { openModal, dataUser } = useContext(DefaultContext);
-    useEffect(() => {
-        setPath(window.location.pathname);
-    }, [window.location.pathname]);
+    const location = useLocation();
+    const path = location.pathname;
 
     return (
         <div
@@ -122,8 +120,7 @@ function Sidebar({ sidebarState }) {
                                 className={`${cx(
                                     'tab',
                                     `${
-                                        window.location.pathname +
-                                            window.location.search ===
+                                        location.pathname + location.search ===
                                             '/playlist?id=favorite' && 'active'
                                     }`,
                                 )}`}

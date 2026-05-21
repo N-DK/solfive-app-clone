@@ -31,14 +31,14 @@ function Header() {
     const { currentSong, currentAudio } = state;
 
     const handleInputClick = () => {
-        if (searchContainerRef) {
+        if (searchContainerRef.current) {
             searchContainerRef.current.style.background = '#000000';
             setShowSearchResults(true);
         }
     };
 
     const handleInputBlur = () => {
-        if (searchContainerRef) {
+        if (searchContainerRef.current) {
             searchContainerRef.current.style.background = '#ffffff1a';
             setShowSearchResults(false);
         }
@@ -47,32 +47,41 @@ function Header() {
     const handlePlaySong = (item) => {
         const fetch = async () => {
             setLoading(true);
-            const res = await getSoundSongById(item.encodeId);
-            const playlist = await getPlaylistById(item?.album?.encodeId);
-            const songs = playlist?.data?.song?.items;
-            const URL = res?.data['128'];
+            try {
+                const [res, playlist] = await Promise.all([
+                    getSoundSongById(item.encodeId),
+                    item?.album?.encodeId
+                        ? getPlaylistById(item.album.encodeId)
+                        : Promise.resolve(null),
+                ]);
+                const songs = playlist?.data?.song?.items;
+                const URL = res?.data?.['128'];
+                if (!URL) return;
 
-            var audio = new Audio(URL);
+                var audio = new Audio(URL);
 
-            if (currentAudio) {
-                if (item.encodeId === currentSong.encodeId) {
-                    audio = currentAudio;
-                } else {
-                    currentAudio.pause();
+                if (currentAudio) {
+                    if (item.encodeId === currentSong?.encodeId) {
+                        audio = currentAudio;
+                    } else {
+                        currentAudio.pause();
+                    }
                 }
+                dispatch(
+                    playSong({
+                        audio,
+                        song: item,
+                        playlist: songs,
+                    }),
+                );
+                const playPromise = audio.play();
+                if (playPromise !== null) playPromise.catch(() => {});
+                navigator(`/player?id=${item.encodeId}`);
+                setOpenPlayer(true);
+                setShowSearchResults(false);
+            } finally {
+                setLoading(false);
             }
-            dispatch(
-                playSong({
-                    audio,
-                    song: item,
-                    playlist: songs,
-                }),
-            );
-            audio.play();
-            navigator(`/player?id=${item.encodeId}`);
-            setOpenPlayer(true);
-            setShowSearchResults(false);
-            setLoading(false);
         };
         fetch();
     };
@@ -92,17 +101,31 @@ function Header() {
     useEffect(() => {
         if (!debouncedValue.trim()) {
             setData();
+            setLoading(false);
             return;
         }
 
+        let canceled = false;
+
         const fetchAPI = async () => {
             setLoading(true);
-            const res = await search(debouncedValue);
-            setData(res?.data);
-            setLoading(false);
+            try {
+                const res = await search(debouncedValue);
+                if (!canceled) {
+                    setData(res?.data);
+                }
+            } finally {
+                if (!canceled) {
+                    setLoading(false);
+                }
+            }
         };
 
         fetchAPI();
+
+        return () => {
+            canceled = true;
+        };
     }, [debouncedValue]);
 
     return (
@@ -167,7 +190,7 @@ function Header() {
                                     <FontAwesomeIcon icon={faMagnifyingGlass} />
                                     <p className="ml-4">{searchText}</p>
                                 </Link>
-                                {data.counter.song > 0 && (
+                                {data.counter.artist > 0 && (
                                     <div className="mt-4">
                                         <h3 className="font-semibold text-sm ml-2 mb-2">
                                             Nghệ sỹ
@@ -188,6 +211,7 @@ function Header() {
                                             >
                                                 <div className="w-10 h-10 rounded-full overflow-hidden mr-4">
                                                     <img
+                                                        alt={item?.name ?? ''}
                                                         className="w-full"
                                                         src={item.thumbnailM}
                                                     />
@@ -197,7 +221,7 @@ function Header() {
                                         ))}
                                     </div>
                                 )}
-                                {data.counter.artist > 0 && (
+                                {data.counter.song > 0 && (
                                     <div className="mt-4">
                                         <h3 className="font-semibold text-sm ml-2 mb-2">
                                             Bài hát
@@ -217,6 +241,7 @@ function Header() {
                                             >
                                                 <div className="w-10 h-10 rounded overflow-hidden mr-4">
                                                     <img
+                                                        alt={item?.title ?? ''}
                                                         className="w-full"
                                                         src={item.thumbnailM}
                                                     />
@@ -257,6 +282,10 @@ function Header() {
                                                 >
                                                     <div className="w-10 h-10 rounded overflow-hidden mr-4">
                                                         <img
+                                                            alt={
+                                                                item?.title ??
+                                                                ''
+                                                            }
                                                             className="w-full"
                                                             src={
                                                                 item.thumbnailM
@@ -282,7 +311,10 @@ function Header() {
                     <div>
                         {dataUser ? (
                             <div className="w-11 h-11 rounded-full overflow-hidden">
-                                <img src={dataUser?.user?.picture} />
+                                <img
+                                    alt={dataUser?.user?.name ?? 'User'}
+                                    src={dataUser?.user?.picture}
+                                />
                             </div>
                         ) : (
                             <button
@@ -371,7 +403,7 @@ function Header() {
                                             />
                                             <p className="ml-4">{searchText}</p>
                                         </Link>
-                                        {data.counter.song > 0 && (
+                                        {data.counter.artist > 0 && (
                                             <div className="mt-4">
                                                 <h3 className="font-semibold text-sm ml-2 mb-2">
                                                     Nghệ sỹ
@@ -395,6 +427,10 @@ function Header() {
                                                         >
                                                             <div className="w-10 h-10 rounded-full overflow-hidden mr-4">
                                                                 <img
+                                                                    alt={
+                                                                        item?.name ??
+                                                                        ''
+                                                                    }
                                                                     className="w-full"
                                                                     src={
                                                                         item.thumbnailM
@@ -407,7 +443,7 @@ function Header() {
                                                 )}
                                             </div>
                                         )}
-                                        {data.counter.artist > 0 && (
+                                        {data.counter.song > 0 && (
                                             <div className="mt-4">
                                                 <h3 className="font-semibold text-sm ml-2 mb-2">
                                                     Bài hát
@@ -430,6 +466,10 @@ function Header() {
                                                         >
                                                             <div className="w-10 h-10 rounded overflow-hidden mr-4">
                                                                 <img
+                                                                    alt={
+                                                                        item?.title ??
+                                                                        ''
+                                                                    }
                                                                     className="w-full"
                                                                     src={
                                                                         item.thumbnailM
@@ -475,6 +515,10 @@ function Header() {
                                                         >
                                                             <div className="w-10 h-10 rounded overflow-hidden mr-4">
                                                                 <img
+                                                                    alt={
+                                                                        item?.title ??
+                                                                        ''
+                                                                    }
                                                                     className="w-full"
                                                                     src={
                                                                         item.thumbnailM
@@ -502,7 +546,12 @@ function Header() {
                             <div>
                                 {dataUser ? (
                                     <div className="w-11 h-11 rounded-full overflow-hidden">
-                                        <img src={dataUser?.user?.picture} />
+                                        <img
+                                            alt={
+                                                dataUser?.user?.name ?? 'User'
+                                            }
+                                            src={dataUser?.user?.picture}
+                                        />
                                     </div>
                                 ) : (
                                     <button

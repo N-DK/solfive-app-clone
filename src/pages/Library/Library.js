@@ -14,10 +14,12 @@ function Library() {
         setProgress(10);
         setProgress(40);
         setProgress(70);
-        setTimeout(() => {
+        const timeoutId = setTimeout(() => {
             setProgress(100);
         }, 500);
-    }, []);
+
+        return () => clearTimeout(timeoutId);
+    }, [setProgress]);
 
     return (
         <div className="mt-14 text-white">

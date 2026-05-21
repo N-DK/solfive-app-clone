@@ -5,14 +5,13 @@ import { Link } from 'react-router-dom';
 const cx = classNames.bind(styles);
 
 function AlbumCard({ data }) {
-    console.log('data', data);
-
     return (
         <div className={`w-44`}>
             <Link to={`/playlist?id=${data?.encodeId}`}>
                 <div className="w-44 h-44 rounded relative">
                     <div className={` rounded overflow-hidden w-44 h-44`}>
                         <img
+                            alt={data?.title ?? ''}
                             className="w-full h-full"
                             src={
                                 data?.thumbnailM?.startsWith('/')
